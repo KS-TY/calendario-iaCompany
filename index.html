@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="en">
 
 <head>
@@ -66,13 +66,13 @@
 
     <script>
         const firebaseConfig = {
-        apiKey: "AIzaSyBxsZq65HUIif9SYTIx6T0SlpNpZaFSpMQ",
-        authDomain: "calendario-grupo-bolivar2.firebaseapp.com",
-        projectId: "calendario-grupo-bolivar2",
-        storageBucket: "calendario-grupo-bolivar2.firebasestorage.app",
-        messagingSenderId: "727096053646",
-        appId: "1:727096053646:web:3de772558a625a66b85edf"
-};
+            apiKey: "AIzaSyBxsZq65HUIif9SYTIx6T0SlpNpZaFSpMQ",
+            authDomain: "calendario-grupo-bolivar2.firebaseapp.com",
+            projectId: "calendario-grupo-bolivar2",
+            storageBucket: "calendario-grupo-bolivar2.firebasestorage.app",
+            messagingSenderId: "727096053646",
+            appId: "1:727096053646:web:3de772558a625a66b85edf"
+        };
 
         // Variables globales
         let currentMember = 'Duvan';
@@ -82,8 +82,8 @@
 
         // Verificar si Firebase está configurado
         function isFirebaseConfigured() {
-            return firebaseConfig.apiKey !== "YOUR_API_KEY_HERE" && 
-                   firebaseConfig.projectId !== "your-project-id";
+            return firebaseConfig.apiKey !== "YOUR_API_KEY_HERE" &&
+                firebaseConfig.projectId !== "your-project-id";
         }
 
         // Inicializar Firebase solo si está configurado
@@ -113,8 +113,8 @@
         function updateConnectionStatus(status) {
             const statusEl = document.getElementById('connectionStatus');
             statusEl.className = `connection-status ${status}`;
-            
-            switch(status) {
+
+            switch (status) {
                 case 'connected':
                     statusEl.textContent = '✅ Conectado a Firebase';
                     break;
@@ -158,15 +158,15 @@
             try {
                 const weekKey = getWeekKey(new Date());
                 const doc = await db.collection('calendar').doc(weekKey).get();
-                
+
                 if (doc.exists) {
                     calendarData = doc.data().days || {};
                 } else {
                     initCalendarData();
                 }
-                
+
                 generateCalendar();
-                
+
                 // Escuchar cambios en tiempo real
                 db.collection('calendar').doc(weekKey).onSnapshot((doc) => {
                     if (doc.exists) {
@@ -174,7 +174,7 @@
                         generateCalendar();
                     }
                 });
-                
+
             } catch (error) {
                 console.error('Error cargando desde Firebase:', error);
                 initLocalMode();
@@ -185,7 +185,7 @@
         function initLocalMode() {
             const weekKey = getWeekKey(new Date());
             const localData = localStorage.getItem(`calendar-${weekKey}`);
-            
+
             if (localData) {
                 try {
                     calendarData = JSON.parse(localData);
@@ -195,7 +195,7 @@
             } else {
                 initCalendarData();
             }
-            
+
             generateCalendar();
         }
 
@@ -203,7 +203,7 @@
         function initCalendarData() {
             const today = new Date();
             const currentWeek = getWeekDays(today);
-            
+
             currentWeek.forEach(date => {
                 const dateKey = date.toDateString();
                 if (!calendarData[dateKey]) {
@@ -225,7 +225,7 @@
                         { text: 'Analizar tendencias', completed: true },
                         { text: 'Preparar informe', completed: false }
                     ],
-                    assignedTo: 'Duvan'
+                    assignedTo: 'Ana García'
                 };
             }
         }
@@ -233,10 +233,10 @@
         // Guardar datos
         async function saveData() {
             const weekKey = getWeekKey(new Date());
-            
+
             // Guardar localmente siempre
             localStorage.setItem(`calendar-${weekKey}`, JSON.stringify(calendarData));
-            
+
             // Guardar en Firebase si está disponible
             if (isFirebaseEnabled && db) {
                 try {
@@ -271,10 +271,10 @@
             weekDays.forEach((date, index) => {
                 const dateKey = date.toDateString();
                 const dayData = calendarData[dateKey] || { objective: '', tasks: [], assignedTo: currentMember };
-                
+
                 const dayCard = document.createElement('div');
                 dayCard.className = `day-card ${index >= 5 ? 'weekend' : ''} ${date.toDateString() === today.toDateString() ? 'today' : ''}`;
-                
+
                 const completedTasks = dayData.tasks.filter(t => t.completed).length;
                 const totalTasks = dayData.tasks.length;
                 const progressPercent = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
@@ -291,11 +291,13 @@
                                        onchange="toggleTask('${dateKey}', ${i})">
                                 <input type="text" value="${task.text}" 
                                        onchange="updateTask('${dateKey}', ${i}, this.value)">
+                                <button class="delete-task-btn" onclick="deleteTask('${dateKey}', ${i})">❌</button>
                             </div>
                         `).join('')}
                     </div>
                     
                     <button class="add-task-btn" onclick="addTask('${dateKey}')">+ Agregar Tarea</button>
+                    <button class="reset-day-btn" onclick="resetDay('${dateKey}')">🔄 Reiniciar Día</button>
                     
                     <div class="day-progress">
                         <div class="day-progress-bar">
@@ -304,7 +306,7 @@
                         <div class="day-progress-text">${completedTasks}/${totalTasks} completadas</div>
                     </div>
                 `;
-                
+
                 calendar.appendChild(dayCard);
             });
 
@@ -351,6 +353,28 @@
             }
         }
 
+        // ✅ Nueva función: eliminar tarea
+        function deleteTask(dateKey, taskIndex) {
+            if (calendarData[dateKey] && calendarData[dateKey].tasks[taskIndex]) {
+                calendarData[dateKey].tasks.splice(taskIndex, 1);
+                saveData();
+                generateCalendar();
+            }
+        }
+
+        // ✅ Nueva función: reiniciar el día
+        function resetDay(dateKey) {
+            if (confirm("¿Seguro que quieres reiniciar este día? Se borrarán todas las tareas.")) {
+                calendarData[dateKey] = {
+                    objective: '',
+                    tasks: [],
+                    assignedTo: currentMember
+                };
+                saveData();
+                generateCalendar();
+            }
+        }
+
         function updateWeekProgress() {
             const today = new Date();
             const weekDays = getWeekDays(today);
@@ -373,7 +397,7 @@
         }
 
         // Inicializar aplicación
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             updateConnectionStatus('connecting');
             setTimeout(() => {
                 initFirebase();
@@ -381,7 +405,7 @@
         });
 
         // Guardar antes de salir
-        window.addEventListener('beforeunload', function() {
+        window.addEventListener('beforeunload', function () {
             const weekKey = getWeekKey(new Date());
             localStorage.setItem(`calendar-${weekKey}`, JSON.stringify(calendarData));
         });
