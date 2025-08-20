@@ -17,6 +17,10 @@
         <h1>🎯 Reto Grupo Bolívar</h1>
     </nav>
 
+    <div class="connection-status connecting" id="connectionStatus">
+        🔄 Conectando...
+    </div>
+
     <div class="container">
         <div class="header-section">
             <div class="week-progress">
@@ -32,21 +36,25 @@
 
             <div class="team-selector">
                 <h3>👥 Miembros del Equipo</h3>
-                <div class="team-member" onclick="selectMember('Duvan')">
-                    <span>🟢</span>
-                    <span>Duvan</span>
-                </div>
-                <div class="team-member" onclick="selectMember('Raul')">
+                <div class="team-member active" onclick="selectMember('Ana García')">
                     <span>🔵</span>
-                    <span>Raul</span>
+                    <span>Ana García</span>
                 </div>
-                <div class="team-member" onclick="selectMember('Juanse')">
+                <div class="team-member" onclick="selectMember('Carlos López')">
+                    <span>🟢</span>
+                    <span>Carlos López</span>
+                </div>
+                <div class="team-member" onclick="selectMember('María Rodríguez')">
                     <span>🟡</span>
-                    <span>Juanse</span>
+                    <span>María Rodríguez</span>
                 </div>
-                <div class="team-member" onclick="selectMember('Isa')">
+                <div class="team-member" onclick="selectMember('David Martínez')">
                     <span>🟠</span>
-                    <span>Isa</span>
+                    <span>David Martínez</span>
+                </div>
+                <div class="team-member" onclick="selectMember('Sofia Hernández')">
+                    <span>🟣</span>
+                    <span>Sofia Hernández</span>
                 </div>
             </div>
         </div>
@@ -56,11 +64,146 @@
         </div>
     </div>
 
-    <script>
-        let currentMember = 'Duvan';
-        let calendarData = {};
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
-        // Inicializar datos del calendario
+    <script>
+        const firebaseConfig = {
+        apiKey: "AIzaSyBxsZq65HUIif9SYTIx6T0SlpNpZaFSpMQ",
+        authDomain: "calendario-grupo-bolivar2.firebaseapp.com",
+        projectId: "calendario-grupo-bolivar2",
+        storageBucket: "calendario-grupo-bolivar2.firebasestorage.app",
+        messagingSenderId: "727096053646",
+        appId: "1:727096053646:web:3de772558a625a66b85edf"
+};
+
+        // Variables globales
+        let currentMember = 'Ana García';
+        let calendarData = {};
+        let db = null;
+        let isFirebaseEnabled = false;
+
+        // Verificar si Firebase está configurado
+        function isFirebaseConfigured() {
+            return firebaseConfig.apiKey !== "YOUR_API_KEY_HERE" && 
+                   firebaseConfig.projectId !== "your-project-id";
+        }
+
+        // Inicializar Firebase solo si está configurado
+        function initFirebase() {
+            if (isFirebaseConfigured()) {
+                try {
+                    firebase.initializeApp(firebaseConfig);
+                    db = firebase.firestore();
+                    isFirebaseEnabled = true;
+                    updateConnectionStatus('connected');
+                    loadFromFirebase();
+                } catch (error) {
+                    console.error('Error inicializando Firebase:', error);
+                    isFirebaseEnabled = false;
+                    updateConnectionStatus('disconnected');
+                    initLocalMode();
+                }
+            } else {
+                console.log('Firebase no configurado, usando modo local');
+                isFirebaseEnabled = false;
+                updateConnectionStatus('disconnected');
+                initLocalMode();
+            }
+        }
+
+        // Actualizar estado de conexión
+        function updateConnectionStatus(status) {
+            const statusEl = document.getElementById('connectionStatus');
+            statusEl.className = `connection-status ${status}`;
+            
+            switch(status) {
+                case 'connected':
+                    statusEl.textContent = '✅ Conectado a Firebase';
+                    break;
+                case 'disconnected':
+                    statusEl.textContent = '💾 Modo Local';
+                    break;
+                case 'connecting':
+                    statusEl.textContent = '🔄 Conectando...';
+                    break;
+            }
+        }
+
+        // Obtener días de la semana
+        function getWeekDays(date) {
+            const week = [];
+            const startOfWeek = new Date(date);
+            const day = startOfWeek.getDay();
+            const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1);
+            startOfWeek.setDate(diff);
+
+            for (let i = 0; i < 7; i++) {
+                const day = new Date(startOfWeek);
+                day.setDate(startOfWeek.getDate() + i);
+                week.push(day);
+            }
+            return week;
+        }
+
+        // Obtener clave de semana
+        function getWeekKey(date) {
+            const week = getWeekDays(date);
+            const start = week[0];
+            const year = start.getFullYear();
+            const month = String(start.getMonth() + 1).padStart(2, '0');
+            const day = String(start.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        // Cargar desde Firebase
+        async function loadFromFirebase() {
+            try {
+                const weekKey = getWeekKey(new Date());
+                const doc = await db.collection('calendar').doc(weekKey).get();
+                
+                if (doc.exists) {
+                    calendarData = doc.data().days || {};
+                } else {
+                    initCalendarData();
+                }
+                
+                generateCalendar();
+                
+                // Escuchar cambios en tiempo real
+                db.collection('calendar').doc(weekKey).onSnapshot((doc) => {
+                    if (doc.exists) {
+                        calendarData = doc.data().days || {};
+                        generateCalendar();
+                    }
+                });
+                
+            } catch (error) {
+                console.error('Error cargando desde Firebase:', error);
+                initLocalMode();
+            }
+        }
+
+        // Modo local
+        function initLocalMode() {
+            const weekKey = getWeekKey(new Date());
+            const localData = localStorage.getItem(`calendar-${weekKey}`);
+            
+            if (localData) {
+                try {
+                    calendarData = JSON.parse(localData);
+                } catch (error) {
+                    initCalendarData();
+                }
+            } else {
+                initCalendarData();
+            }
+            
+            generateCalendar();
+        }
+
+        // Inicializar datos por defecto
         function initCalendarData() {
             const today = new Date();
             const currentWeek = getWeekDays(today);
@@ -75,35 +218,43 @@
                     };
                 }
             });
-            
+
             // Datos de ejemplo
             const exampleDate = currentWeek[0].toDateString();
-            calendarData[exampleDate] = {
-                objective: 'Completar análisis de mercado',
-                tasks: [
-                    { text: 'Investigar competidores', completed: false },
-                    { text: 'Analizar tendencias', completed: true },
-                    { text: 'Preparar informe', completed: false }
-                ],
-                assignedTo: 'Duvan'
-            };
-        }
-
-        function getWeekDays(date) {
-            const week = [];
-            const startOfWeek = new Date(date);
-            const day = startOfWeek.getDay();
-            const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1); // Lunes como primer día
-            startOfWeek.setDate(diff);
-
-            for (let i = 0; i < 7; i++) {
-                const day = new Date(startOfWeek);
-                day.setDate(startOfWeek.getDate() + i);
-                week.push(day);
+            if (!calendarData[exampleDate].objective) {
+                calendarData[exampleDate] = {
+                    objective: 'Completar análisis de mercado',
+                    tasks: [
+                        { text: 'Investigar competidores', completed: false },
+                        { text: 'Analizar tendencias', completed: true },
+                        { text: 'Preparar informe', completed: false }
+                    ],
+                    assignedTo: 'Ana García'
+                };
             }
-            return week;
         }
 
+        // Guardar datos
+        async function saveData() {
+            const weekKey = getWeekKey(new Date());
+            
+            // Guardar localmente siempre
+            localStorage.setItem(`calendar-${weekKey}`, JSON.stringify(calendarData));
+            
+            // Guardar en Firebase si está disponible
+            if (isFirebaseEnabled && db) {
+                try {
+                    await db.collection('calendar').doc(weekKey).set({
+                        days: calendarData,
+                        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                } catch (error) {
+                    console.error('Error guardando en Firebase:', error);
+                }
+            }
+        }
+
+        // Generar calendario
         function generateCalendar() {
             const calendar = document.getElementById('calendar');
             const today = new Date();
@@ -164,10 +315,11 @@
             updateWeekProgress();
         }
 
+        // Funciones de interacción
         function selectMember(member) {
             currentMember = member;
-            // Aquí podrías filtrar los datos por miembro
-            generateCalendar();
+            document.querySelectorAll('.team-member').forEach(el => el.classList.remove('active'));
+            event.target.closest('.team-member').classList.add('active');
         }
 
         function updateObjective(dateKey, value) {
@@ -176,6 +328,7 @@
             }
             calendarData[dateKey].objective = value;
             calendarData[dateKey].assignedTo = currentMember;
+            saveData();
         }
 
         function addTask(dateKey) {
@@ -183,16 +336,23 @@
                 calendarData[dateKey] = { objective: '', tasks: [], assignedTo: currentMember };
             }
             calendarData[dateKey].tasks.push({ text: 'Nueva tarea', completed: false });
+            saveData();
             generateCalendar();
         }
 
         function updateTask(dateKey, taskIndex, value) {
-            calendarData[dateKey].tasks[taskIndex].text = value;
+            if (calendarData[dateKey] && calendarData[dateKey].tasks[taskIndex]) {
+                calendarData[dateKey].tasks[taskIndex].text = value;
+                saveData();
+            }
         }
 
         function toggleTask(dateKey, taskIndex) {
-            calendarData[dateKey].tasks[taskIndex].completed = !calendarData[dateKey].tasks[taskIndex].completed;
-            generateCalendar();
+            if (calendarData[dateKey] && calendarData[dateKey].tasks[taskIndex]) {
+                calendarData[dateKey].tasks[taskIndex].completed = !calendarData[dateKey].tasks[taskIndex].completed;
+                saveData();
+                generateCalendar();
+            }
         }
 
         function updateWeekProgress() {
@@ -204,7 +364,7 @@
             weekDays.forEach(date => {
                 const dateKey = date.toDateString();
                 const dayData = calendarData[dateKey];
-                if (dayData) {
+                if (dayData && dayData.tasks) {
                     totalTasks += dayData.tasks.length;
                     completedTasks += dayData.tasks.filter(t => t.completed).length;
                 }
@@ -216,9 +376,19 @@
             document.getElementById('totalTasks').textContent = `${totalTasks} tareas totales`;
         }
 
-        // Inicializar
-        initCalendarData();
-        generateCalendar();
+        // Inicializar aplicación
+        document.addEventListener('DOMContentLoaded', function() {
+            updateConnectionStatus('connecting');
+            setTimeout(() => {
+                initFirebase();
+            }, 1000);
+        });
+
+        // Guardar antes de salir
+        window.addEventListener('beforeunload', function() {
+            const weekKey = getWeekKey(new Date());
+            localStorage.setItem(`calendar-${weekKey}`, JSON.stringify(calendarData));
+        });
     </script>
 
 </body>
