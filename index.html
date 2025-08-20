@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Udemy</title>
+    <link rel="stylesheet" href="assets/CSS/estilos.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <h1>🎯 Reto Grupo Bolívar</h1>
+    </nav>
+
+    <div class="container">
+        <div class="header-section">
+            <div class="week-progress">
+                <h2>📊 Progreso Semanal del Equipo</h2>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="weekProgress" style="width: 0%"></div>
+                </div>
+                <div class="stats">
+                    <span id="completedTasks">0 tareas completadas</span>
+                    <span id="totalTasks">0 tareas totales</span>
+                </div>
+            </div>
+
+            <div class="team-selector">
+                <h3>👥 Miembros del Equipo</h3>
+                <div class="team-member" onclick="selectMember('Duvan')">
+                    <span>🟢</span>
+                    <span>Duvan</span>
+                </div>
+                <div class="team-member" onclick="selectMember('Raul')">
+                    <span>🔵</span>
+                    <span>Raul</span>
+                </div>
+                <div class="team-member" onclick="selectMember('Juanse')">
+                    <span>🟡</span>
+                    <span>Juanse</span>
+                </div>
+                <div class="team-member" onclick="selectMember('Isa')">
+                    <span>🟠</span>
+                    <span>Isa</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="calendar-grid" id="calendar">
+            <!-- El calendario se generará dinámicamente -->
+        </div>
+    </div>
+
+    <script>
+        let currentMember = 'Duvan';
+        let calendarData = {};
+
+        // Inicializar datos del calendario
+        function initCalendarData() {
+            const today = new Date();
+            const currentWeek = getWeekDays(today);
+            
+            currentWeek.forEach(date => {
+                const dateKey = date.toDateString();
+                if (!calendarData[dateKey]) {
+                    calendarData[dateKey] = {
+                        objective: '',
+                        tasks: [],
+                        assignedTo: currentMember
+                    };
+                }
+            });
+            
+            // Datos de ejemplo
+            const exampleDate = currentWeek[0].toDateString();
+            calendarData[exampleDate] = {
+                objective: 'Completar análisis de mercado',
+                tasks: [
+                    { text: 'Investigar competidores', completed: false },
+                    { text: 'Analizar tendencias', completed: true },
+                    { text: 'Preparar informe', completed: false }
+                ],
+                assignedTo: 'Duvan'
+            };
+        }
+
+        function getWeekDays(date) {
+            const week = [];
+            const startOfWeek = new Date(date);
+            const day = startOfWeek.getDay();
+            const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1); // Lunes como primer día
+            startOfWeek.setDate(diff);
+
+            for (let i = 0; i < 7; i++) {
+                const day = new Date(startOfWeek);
+                day.setDate(startOfWeek.getDate() + i);
+                week.push(day);
+            }
+            return week;
+        }
+
+        function generateCalendar() {
+            const calendar = document.getElementById('calendar');
+            const today = new Date();
+            const weekDays = getWeekDays(today);
+            const dayNames = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+
+            calendar.innerHTML = '';
+
+            // Headers
+            dayNames.forEach(dayName => {
+                const header = document.createElement('div');
+                header.className = 'day-header';
+                header.textContent = dayName;
+                calendar.appendChild(header);
+            });
+
+            // Day cards
+            weekDays.forEach((date, index) => {
+                const dateKey = date.toDateString();
+                const dayData = calendarData[dateKey] || { objective: '', tasks: [], assignedTo: currentMember };
+                
+                const dayCard = document.createElement('div');
+                dayCard.className = `day-card ${index >= 5 ? 'weekend' : ''} ${date.toDateString() === today.toDateString() ? 'today' : ''}`;
+                
+                const completedTasks = dayData.tasks.filter(t => t.completed).length;
+                const totalTasks = dayData.tasks.length;
+                const progressPercent = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+
+                dayCard.innerHTML = `
+                    <div class="day-number">${date.getDate()}</div>
+                    <input type="text" class="objective-input" placeholder="Objetivo del día..." 
+                           value="${dayData.objective}" onchange="updateObjective('${dateKey}', this.value)">
+                    
+                    <div class="checklist" id="checklist-${dateKey}">
+                        ${dayData.tasks.map((task, i) => `
+                            <div class="checklist-item">
+                                <input type="checkbox" ${task.completed ? 'checked' : ''} 
+                                       onchange="toggleTask('${dateKey}', ${i})">
+                                <input type="text" value="${task.text}" 
+                                       onchange="updateTask('${dateKey}', ${i}, this.value)">
+                            </div>
+                        `).join('')}
+                    </div>
+                    
+                    <button class="add-task-btn" onclick="addTask('${dateKey}')">+ Agregar Tarea</button>
+                    
+                    <div class="day-progress">
+                        <div class="day-progress-bar">
+                            <div class="day-progress-fill" style="width: ${progressPercent}%"></div>
+                        </div>
+                        <div class="day-progress-text">${completedTasks}/${totalTasks} completadas</div>
+                    </div>
+                `;
+                
+                calendar.appendChild(dayCard);
+            });
+
+            updateWeekProgress();
+        }
+
+        function selectMember(member) {
+            currentMember = member;
+            // Aquí podrías filtrar los datos por miembro
+            generateCalendar();
+        }
+
+        function updateObjective(dateKey, value) {
+            if (!calendarData[dateKey]) {
+                calendarData[dateKey] = { objective: '', tasks: [], assignedTo: currentMember };
+            }
+            calendarData[dateKey].objective = value;
+            calendarData[dateKey].assignedTo = currentMember;
+        }
+
+        function addTask(dateKey) {
+            if (!calendarData[dateKey]) {
+                calendarData[dateKey] = { objective: '', tasks: [], assignedTo: currentMember };
+            }
+            calendarData[dateKey].tasks.push({ text: 'Nueva tarea', completed: false });
+            generateCalendar();
+        }
+
+        function updateTask(dateKey, taskIndex, value) {
+            calendarData[dateKey].tasks[taskIndex].text = value;
+        }
+
+        function toggleTask(dateKey, taskIndex) {
+            calendarData[dateKey].tasks[taskIndex].completed = !calendarData[dateKey].tasks[taskIndex].completed;
+            generateCalendar();
+        }
+
+        function updateWeekProgress() {
+            const today = new Date();
+            const weekDays = getWeekDays(today);
+            let totalTasks = 0;
+            let completedTasks = 0;
+
+            weekDays.forEach(date => {
+                const dateKey = date.toDateString();
+                const dayData = calendarData[dateKey];
+                if (dayData) {
+                    totalTasks += dayData.tasks.length;
+                    completedTasks += dayData.tasks.filter(t => t.completed).length;
+                }
+            });
+
+            const progressPercent = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+            document.getElementById('weekProgress').style.width = progressPercent + '%';
+            document.getElementById('completedTasks').textContent = `${completedTasks} tareas completadas`;
+            document.getElementById('totalTasks').textContent = `${totalTasks} tareas totales`;
+        }
+
+        // Inicializar
+        initCalendarData();
+        generateCalendar();
+    </script>
+
+</body>
+
+</html>
