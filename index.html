@@ -1,4 +1,4 @@
-<!DOCTYPE html>  
+<!DOCTYPE html> 
 <html lang="en">
 
 <head>
@@ -151,7 +151,6 @@
         let currentFilter = 'all';
         let db = null;
         let isFirebaseEnabled = false;
-        let commentsListener = null; // Para controlar el listener
 
         // =================================== //
         //         UTILITY FUNCTIONS           //
@@ -213,9 +212,8 @@
                 db = firebase.firestore();
                 isFirebaseEnabled = true;
                 updateConnectionStatus('connected');
-                // Carga calendario y comentarios (ambos desde Firebase)
                 loadFromFirebase();
-                setupCommentsRealtime();
+                loadCommentsFromFirebase();
             } catch (error) {
                 console.error('Error inicializando Firebase:', error);
                 isFirebaseEnabled = false;
@@ -224,7 +222,6 @@
             }
         }
 
-        // ---------- CALENDARIO (igual a tu lógica, con Firestore y fallback) ----------
         async function loadFromFirebase() {
             try {
                 const weekKey = getWeekKey(new Date());
@@ -234,11 +231,6 @@
                 
                 if (!doc.exists) {
                     initCalendarData();
-                    // Creamos el doc inicial para la semana
-                    await db.collection('calendar').doc(weekKey).set({
-                        days: calendarData,
-                        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-                    }, { merge: true });
                 }
 
                 generateCalendar();
@@ -247,6 +239,22 @@
             } catch (error) {
                 console.error('Error cargando desde Firebase:', error);
                 initLocalMode();
+            }
+        }
+
+        async function loadCommentsFromFirebase() {
+            try {
+                const weekKey = getWeekKey(new Date());
+                const doc = await db.collection('comments').doc(weekKey).get();
+
+                commentsData = doc.exists ? (doc.data().comments || []) : [];
+                
+                generateComments();
+                setupCommentsListener(weekKey);
+
+            } catch (error) {
+                console.error('Error cargando comentarios desde Firebase:', error);
+                loadCommentsFromLocal();
             }
         }
 
@@ -259,94 +267,50 @@
             });
         }
 
+        function setupCommentsListener(weekKey) {
+            db.collection('comments').doc(weekKey).onSnapshot((doc) => {
+                if (doc.exists) {
+                    commentsData = doc.data().comments || [];
+                    generateComments();
+                }
+            });
+        }
+
         async function saveCalendarData() {
             const weekKey = getWeekKey(new Date());
-            // Siempre guardamos local como respaldo
+            
+            // Always save locally
             localStorage.setItem(`calendar-${weekKey}`, JSON.stringify(calendarData));
 
+            // Save to Firebase if available
             if (isFirebaseEnabled && db) {
                 try {
                     await db.collection('calendar').doc(weekKey).set({
                         days: calendarData,
                         lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-                    }, { merge: true });
+                    });
                 } catch (error) {
-                    console.error('Error guardando en Firebase (calendario):', error);
+                    console.error('Error guardando en Firebase:', error);
                 }
             }
         }
 
-        // ---------- COMENTARIOS (NUEVO: subcolección items con onSnapshot) ----------
-        function setupCommentsRealtime() {
+        async function saveCommentsData() {
             const weekKey = getWeekKey(new Date());
+            
+            // Always save locally
+            localStorage.setItem(`comments-${weekKey}`, JSON.stringify(commentsData));
 
-            // Limpia listener anterior
-            if (commentsListener) commentsListener();
-
-            // Subcolección por semana: comments/{weekKey}/items
-            const ref = db
-                .collection('comments')
-                .doc(weekKey)
-                .collection('items')
-                .orderBy('ts', 'desc');
-
-            commentsListener = ref.onSnapshot((snap) => {
-                const arr = [];
-                snap.forEach(d => {
-                    const data = d.data() || {};
-                    arr.push({
-                        id: d.id,
-                        title: data.title || '',
-                        text: data.text || '',
-                        category: data.category || 'general',
-                        author: data.author || 'Anónimo',
-                        date: (data.date) ? data.date : new Date().toISOString(),
-                        timestamp: data.timestamp || Date.now(),
-                        ts: data.ts || null
+            // Save to Firebase if available
+            if (isFirebaseEnabled && db) {
+                try {
+                    await db.collection('comments').doc(weekKey).set({
+                        comments: commentsData,
+                        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
                     });
-                });
-                commentsData = arr;
-                // Respaldamos local (solo lectura de respaldo)
-                const backupKey = `comments-${weekKey}`;
-                try { localStorage.setItem(backupKey, JSON.stringify(commentsData)); } catch(e){}
-                generateComments();
-            }, (error) => {
-                console.error('Error en listener de comentarios:', error);
-                // Fallback: carga respaldo local si existe
-                loadCommentsFromLocal();
-            });
-        }
-
-        async function saveCommentToFirebase(comment) {
-            const weekKey = getWeekKey(new Date());
-            try {
-                await db
-                    .collection('comments')
-                    .doc(weekKey)
-                    .collection('items')
-                    .add({
-                        ...comment,
-                        // Timestamp de servidor para orden consistente
-                        ts: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-            } catch (error) {
-                console.error('Error guardando comentario en Firebase:', error);
-                alert('No se pudo guardar el comentario en la nube. Revisa tu conexión.');
-            }
-        }
-
-        async function deleteCommentFromFirebase(commentId) {
-            const weekKey = getWeekKey(new Date());
-            try {
-                await db
-                    .collection('comments')
-                    .doc(weekKey)
-                    .collection('items')
-                    .doc(commentId)
-                    .delete();
-            } catch (error) {
-                console.error('Error eliminando comentario:', error);
-                alert('No se pudo eliminar el comentario.');
+                } catch (error) {
+                    console.error('Error guardando comentarios en Firebase:', error);
+                }
             }
         }
 
@@ -608,7 +572,7 @@
             }
         }
 
-        async function saveComment() {
+        function saveComment() {
             const title = document.getElementById('commentTitle').value.trim();
             const text = document.getElementById('commentText').value.trim();
             const category = document.getElementById('commentCategory').value;
@@ -619,24 +583,18 @@
             }
 
             const comment = {
+                id: Date.now().toString(),
                 title,
                 text,
                 category,
                 author: currentMember,
-                date: new Date().toISOString(),  // para mostrar rápido
-                timestamp: Date.now()            // para orden local inmediato
+                date: new Date().toISOString(),
+                timestamp: Date.now()
             };
 
-            if (isFirebaseEnabled && db) {
-                await saveCommentToFirebase(comment);
-            } else {
-                // Modo local (solo respaldo visual)
-                commentsData.unshift({ id: 'local-' + Date.now(), ...comment });
-                const weekKey = getWeekKey(new Date());
-                try { localStorage.setItem(`comments-${weekKey}`, JSON.stringify(commentsData)); } catch(e){}
-                generateComments();
-            }
-            
+            commentsData.unshift(comment);
+            saveCommentsData();
+            generateComments();
             clearCommentForm();
         }
 
@@ -649,13 +607,9 @@
         function generateComments() {
             const commentsList = document.getElementById('commentsList');
             
-            // Filtramos en cliente para no requerir índices en Firestore
             const filteredComments = currentFilter === 'all' 
                 ? commentsData 
                 : commentsData.filter(comment => comment.category === currentFilter);
-
-            // Orden local por timestamp descendente (si falta ts de servidor aún)
-            filteredComments.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
             if (filteredComments.length === 0) {
                 commentsList.innerHTML = `
@@ -682,14 +636,14 @@
             return `
                 <div class="comment-item ${comment.category}">
                     <div class="comment-header">
-                        <h4 class="comment-title">${escapeHtml(comment.title)}</h4>
+                        <h4 class="comment-title">${comment.title}</h4>
                         <div class="comment-meta">
-                            <span class="comment-category">${CATEGORY_LABELS[comment.category] || '💬 General'}</span>
-                            <span class="comment-author">Por: ${escapeHtml(comment.author || 'Anónimo')}</span>
+                            <span class="comment-category">${CATEGORY_LABELS[comment.category]}</span>
+                            <span class="comment-author">Por: ${comment.author}</span>
                             <span class="comment-date">${formattedDate}</span>
                         </div>
                     </div>
-                    <div class="comment-text">${escapeHtml(comment.text).replace(/\n/g,'<br>')}</div>
+                    <div class="comment-text">${comment.text}</div>
                     <div class="comment-actions">
                         <button class="delete-comment-btn" data-comment-id="${comment.id}">
                             <i class="fas fa-trash"></i> Eliminar
@@ -706,36 +660,15 @@
             document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
             document.querySelector(`[data-filter="${category}"]`).classList.add('active');
             
-            // No cambiamos la query en Firestore para evitar necesidad de índices.
             generateComments();
         }
 
-        async function deleteComment(commentId) {
-            if (!commentId) return;
-            if (!confirm('¿Seguro que quieres eliminar este comentario?')) return;
-
-            if (isFirebaseEnabled && db && !commentId.startsWith('local-')) {
-                await deleteCommentFromFirebase(commentId);
-            } else {
-                // Local fallback
-                const initialLength = commentsData.length;
-                commentsData = commentsData.filter(c => c.id !== commentId);
-                if (commentsData.length < initialLength) {
-                    const weekKey = getWeekKey(new Date());
-                    try { localStorage.setItem(`comments-${weekKey}`, JSON.stringify(commentsData)); } catch(e){}
-                    generateComments();
-                }
+        function deleteComment(commentId) {
+            if (confirm('¿Seguro que quieres eliminar este comentario?')) {
+                commentsData = commentsData.filter(comment => comment.id !== commentId);
+                saveCommentsData();
+                generateComments();
             }
-        }
-
-        // Helpers
-        function escapeHtml(str='') {
-            return String(str)
-                .replace(/&/g,'&amp;')
-                .replace(/</g,'&lt;')
-                .replace(/>/g,'&gt;')
-                .replace(/"/g,'&quot;')
-                .replace(/'/g,'&#039;');
         }
 
         // =================================== //
@@ -793,23 +726,11 @@
                 }
             });
 
-            // Save before page unload (solo calendario; comentarios ya quedan en Firestore)
+            // Save before page unload
             window.addEventListener('beforeunload', () => {
                 const weekKey = getWeekKey(new Date());
                 localStorage.setItem(`calendar-${weekKey}`, JSON.stringify(calendarData));
-            });
-
-            // Enter key para guardar comentarios
-            document.getElementById('commentTitle').addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    document.getElementById('commentText').focus();
-                }
-            });
-
-            document.getElementById('commentText').addEventListener('keypress', (e) => {
-                if (e.key === 'Enter' && e.ctrlKey) {
-                    saveComment();
-                }
+                localStorage.setItem(`comments-${weekKey}`, JSON.stringify(commentsData));
             });
         }
 
@@ -825,15 +746,9 @@
             }, 1000);
         }
 
-        // Función para debug - puedes eliminar en producción
-        window.debugComments = function() {
-            console.log('Comentarios actuales:', commentsData);
-            console.log('Firebase habilitado:', isFirebaseEnabled);
-            console.log('Filtro actual:', currentFilter);
-        };
-
         // Start application when DOM is ready
         document.addEventListener('DOMContentLoaded', initApplication);
     </script>
 </body>
+
 </html>
