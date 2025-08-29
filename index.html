@@ -60,6 +60,52 @@
         </div>
     </div>
 
+    <!-- NUEVA SECCIÓN: Comentarios y Aportes -->
+    <div class="comments-section" id="commentsSection">
+        <div class="comments-header" onclick="toggleCommentsPanel()">
+            <h2>📝 Comentarios y Aportes de la Semana</h2>
+            <button class="toggle-comments-btn">
+                <i class="fas fa-chevron-up" id="toggleIcon"></i>
+            </button>
+        </div>
+        
+        <div class="comments-panel" id="commentsPanel">
+            <div class="comment-form">
+                <div class="form-group">
+                    <input type="text" id="commentTitle" placeholder="Título del aporte..." class="comment-input">
+                </div>
+                <div class="form-group">
+                    <textarea id="commentText" placeholder="Escribe tu comentario o aporte aquí..." class="comment-textarea"></textarea>
+                </div>
+                <div class="form-actions">
+                    <select id="commentCategory" class="comment-select">
+                        <option value="general">💬 General</option>
+                        <option value="idea">💡 Ideas</option>
+                        <option value="problema">⚠️ Problemas</option>
+                        <option value="solucion">✅ Soluciones</option>
+                        <option value="mejora">📈 Mejoras</option>
+                    </select>
+                    <button onclick="saveComment()" class="save-comment-btn">
+                        <i class="fas fa-save"></i> Guardar
+                    </button>
+                </div>
+            </div>
+
+            <div class="comments-filters">
+                <button class="filter-btn active" onclick="filterComments('all')">Todos</button>
+                <button class="filter-btn" onclick="filterComments('general')">💬 General</button>
+                <button class="filter-btn" onclick="filterComments('idea')">💡 Ideas</button>
+                <button class="filter-btn" onclick="filterComments('problema')">⚠️ Problemas</button>
+                <button class="filter-btn" onclick="filterComments('solucion')">✅ Soluciones</button>
+                <button class="filter-btn" onclick="filterComments('mejora')">📈 Mejoras</button>
+            </div>
+
+            <div class="comments-list" id="commentsList">
+                <!-- Los comentarios se generarán dinámicamente -->
+            </div>
+        </div>
+    </div>
+
     <!-- Firebase Scripts -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
@@ -77,6 +123,8 @@
         // Variables globales
         let currentMember = 'Duvan';
         let calendarData = {};
+        let commentsData = []; // NUEVA VARIABLE PARA COMENTARIOS
+        let currentFilter = 'all'; // NUEVA VARIABLE PARA FILTROS
         let db = null;
         let isFirebaseEnabled = false;
 
@@ -95,6 +143,7 @@
                     isFirebaseEnabled = true;
                     updateConnectionStatus('connected');
                     loadFromFirebase();
+                    loadCommentsFromFirebase(); // NUEVA LÍNEA PARA CARGAR COMENTARIOS
                 } catch (error) {
                     console.error('Error inicializando Firebase:', error);
                     isFirebaseEnabled = false;
@@ -181,6 +230,52 @@
             }
         }
 
+        // NUEVA FUNCIÓN: Cargar comentarios desde Firebase
+        async function loadCommentsFromFirebase() {
+            try {
+                const weekKey = getWeekKey(new Date());
+                const doc = await db.collection('comments').doc(weekKey).get();
+
+                if (doc.exists) {
+                    commentsData = doc.data().comments || [];
+                } else {
+                    commentsData = [];
+                }
+
+                generateComments();
+
+                // Escuchar cambios en tiempo real para comentarios
+                db.collection('comments').doc(weekKey).onSnapshot((doc) => {
+                    if (doc.exists) {
+                        commentsData = doc.data().comments || [];
+                        generateComments();
+                    }
+                });
+
+            } catch (error) {
+                console.error('Error cargando comentarios desde Firebase:', error);
+                loadCommentsFromLocal();
+            }
+        }
+
+        // NUEVA FUNCIÓN: Cargar comentarios desde localStorage
+        function loadCommentsFromLocal() {
+            const weekKey = getWeekKey(new Date());
+            const localComments = localStorage.getItem(`comments-${weekKey}`);
+            
+            if (localComments) {
+                try {
+                    commentsData = JSON.parse(localComments);
+                } catch (error) {
+                    commentsData = [];
+                }
+            } else {
+                commentsData = [];
+            }
+            
+            generateComments();
+        }
+
         // Modo local
         function initLocalMode() {
             const weekKey = getWeekKey(new Date());
@@ -197,6 +292,7 @@
             }
 
             generateCalendar();
+            loadCommentsFromLocal(); // NUEVA LÍNEA PARA CARGAR COMENTARIOS EN MODO LOCAL
         }
 
         // Inicializar datos por defecto
@@ -246,6 +342,26 @@
                     });
                 } catch (error) {
                     console.error('Error guardando en Firebase:', error);
+                }
+            }
+        }
+
+        // NUEVA FUNCIÓN: Guardar comentarios
+        async function saveCommentsData() {
+            const weekKey = getWeekKey(new Date());
+
+            // Guardar localmente siempre
+            localStorage.setItem(`comments-${weekKey}`, JSON.stringify(commentsData));
+
+            // Guardar en Firebase si está disponible
+            if (isFirebaseEnabled && db) {
+                try {
+                    await db.collection('comments').doc(weekKey).set({
+                        comments: commentsData,
+                        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                } catch (error) {
+                    console.error('Error guardando comentarios en Firebase:', error);
                 }
             }
         }
@@ -396,6 +512,139 @@
             document.getElementById('totalTasks').textContent = `${totalTasks} tareas totales`;
         }
 
+        // NUEVAS FUNCIONES PARA COMENTARIOS
+
+        // Alternar panel de comentarios
+        function toggleCommentsPanel() {
+            const section = document.getElementById('commentsSection');
+            const icon = document.getElementById('toggleIcon');
+            
+            section.classList.toggle('expanded');
+            
+            if (section.classList.contains('expanded')) {
+                icon.classList.remove('fa-chevron-up');
+                icon.classList.add('fa-chevron-down');
+            } else {
+                icon.classList.remove('fa-chevron-down');
+                icon.classList.add('fa-chevron-up');
+            }
+        }
+
+        // Guardar comentario
+        function saveComment() {
+            const title = document.getElementById('commentTitle').value.trim();
+            const text = document.getElementById('commentText').value.trim();
+            const category = document.getElementById('commentCategory').value;
+
+            if (!title || !text) {
+                alert('Por favor completa el título y el comentario');
+                return;
+            }
+
+            const comment = {
+                id: Date.now().toString(),
+                title: title,
+                text: text,
+                category: category,
+                author: currentMember,
+                date: new Date().toISOString(),
+                timestamp: Date.now()
+            };
+
+            commentsData.unshift(comment);
+            saveCommentsData();
+            generateComments();
+
+            // Limpiar formulario
+            document.getElementById('commentTitle').value = '';
+            document.getElementById('commentText').value = '';
+            document.getElementById('commentCategory').value = 'general';
+        }
+
+        // Generar lista de comentarios
+        function generateComments() {
+            const commentsList = document.getElementById('commentsList');
+            
+            // Filtrar comentarios según el filtro activo
+            let filteredComments = commentsData;
+            if (currentFilter !== 'all') {
+                filteredComments = commentsData.filter(comment => comment.category === currentFilter);
+            }
+
+            if (filteredComments.length === 0) {
+                commentsList.innerHTML = `
+                    <div class="no-comments">
+                        <i class="fas fa-comments" style="font-size: 2rem; margin-bottom: 0.5rem; opacity: 0.5;"></i>
+                        <p>No hay comentarios aún. ¡Sé el primero en agregar un aporte!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            commentsList.innerHTML = filteredComments.map(comment => {
+                const date = new Date(comment.date);
+                const formattedDate = date.toLocaleDateString('es-ES', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+
+                return `
+                    <div class="comment-item ${comment.category}">
+                        <div class="comment-header">
+                            <h4 class="comment-title">${comment.title}</h4>
+                            <div class="comment-meta">
+                                <span class="comment-category">${getCategoryLabel(comment.category)}</span>
+                                <span class="comment-author">Por: ${comment.author}</span>
+                                <span class="comment-date">${formattedDate}</span>
+                            </div>
+                        </div>
+                        <div class="comment-text">${comment.text}</div>
+                        <div class="comment-actions">
+                            <button class="delete-comment-btn" onclick="deleteComment('${comment.id}')">
+                                <i class="fas fa-trash"></i> Eliminar
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Obtener etiqueta de categoría
+        function getCategoryLabel(category) {
+            const labels = {
+                'general': '💬 General',
+                'idea': '💡 Ideas',
+                'problema': '⚠️ Problemas',
+                'solucion': '✅ Soluciones',
+                'mejora': '📈 Mejoras'
+            };
+            return labels[category] || '💬 General';
+        }
+
+        // Filtrar comentarios
+        function filterComments(category) {
+            currentFilter = category;
+            
+            // Actualizar botones activos
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            generateComments();
+        }
+
+        // Eliminar comentario
+        function deleteComment(commentId) {
+            if (confirm('¿Seguro que quieres eliminar este comentario?')) {
+                commentsData = commentsData.filter(comment => comment.id !== commentId);
+                saveCommentsData();
+                generateComments();
+            }
+        }
+
+        // Función de editar comentario removida - solo eliminación disponible
+
         // Inicializar aplicación
         document.addEventListener('DOMContentLoaded', function () {
             updateConnectionStatus('connecting');
@@ -408,6 +657,21 @@
         window.addEventListener('beforeunload', function () {
             const weekKey = getWeekKey(new Date());
             localStorage.setItem(`calendar-${weekKey}`, JSON.stringify(calendarData));
+            localStorage.setItem(`comments-${weekKey}`, JSON.stringify(commentsData)); // NUEVA LÍNEA
+        });
+
+        // NUEVA FUNCIÓN: Manejar scroll para mostrar comentarios automáticamente
+        window.addEventListener('scroll', function() {
+            const scrolled = window.pageYOffset;
+            const viewportHeight = window.innerHeight;
+            const fullHeight = document.body.offsetHeight;
+            
+            // Si el usuario hace scroll hacia abajo en la parte inferior
+            if (scrolled + viewportHeight >= fullHeight - 100) {
+                document.getElementById('commentsSection').classList.add('expanded');
+                document.getElementById('toggleIcon').classList.remove('fa-chevron-up');
+                document.getElementById('toggleIcon').classList.add('fa-chevron-down');
+            }
         });
     </script>
 
