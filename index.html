@@ -12,21 +12,25 @@
 </head>
 
 <body>
-
+    <!-- Navigation -->
     <nav class="navbar">
         <h1>🎯 Reto Grupo Bolívar</h1>
     </nav>
 
+    <!-- Connection Status -->git 
     <div class="connection-status connecting" id="connectionStatus">
         🔄 Conectando...
     </div>
 
+    <!-- Main Container -->
     <div class="container">
+        <!-- Header Section -->
         <div class="header-section">
+            <!-- Week Progress -->
             <div class="week-progress">
                 <h2>📊 Progreso Semanal del Equipo</h2>
                 <div class="progress-bar">
-                    <div class="progress-fill" id="weekProgress" style="width: 0%"></div>
+                    <div class="progress-fill" id="weekProgress"></div>
                 </div>
                 <div class="stats">
                     <span id="completedTasks">0 tareas completadas</span>
@@ -34,42 +38,45 @@
                 </div>
             </div>
 
+            <!-- Team Selector -->
             <div class="team-selector">
                 <h3>👥 Miembros del Equipo</h3>
-                <div class="team-member active" onclick="selectMember('Duvan')">
+                <div class="team-member active" data-member="Duvan">
                     <span>🔵</span>
                     <span>Duvan</span>
                 </div>
-                <div class="team-member" onclick="selectMember('Juanse')">
+                <div class="team-member" data-member="Juanse">
                     <span>🟢</span>
                     <span>Juanse</span>
                 </div>
-                <div class="team-member" onclick="selectMember('Isa')">
+                <div class="team-member" data-member="Isa">
                     <span>🟡</span>
                     <span>Isa</span>
                 </div>
-                <div class="team-member" onclick="selectMember('Raul')">
+                <div class="team-member" data-member="Raul">
                     <span>🟠</span>
                     <span>Raul</span>
                 </div>
             </div>
         </div>
 
+        <!-- Calendar Grid -->
         <div class="calendar-grid" id="calendar">
-            <!-- El calendario se generará dinámicamente -->
+            <!-- Calendar content will be generated dynamically -->
         </div>
     </div>
 
-    <!-- NUEVA SECCIÓN: Comentarios y Aportes -->
+    <!-- Comments Section -->
     <div class="comments-section" id="commentsSection">
-        <div class="comments-header" onclick="toggleCommentsPanel()">
+        <div class="comments-header">
             <h2>📝 Comentarios y Aportes de la Semana</h2>
-            <button class="toggle-comments-btn">
+            <button class="toggle-comments-btn" id="toggleCommentsBtn">
                 <i class="fas fa-chevron-up" id="toggleIcon"></i>
             </button>
         </div>
         
         <div class="comments-panel" id="commentsPanel">
+            <!-- Comment Form -->
             <div class="comment-form">
                 <div class="form-group">
                     <input type="text" id="commentTitle" placeholder="Título del aporte..." class="comment-input">
@@ -85,23 +92,25 @@
                         <option value="solucion">✅ Soluciones</option>
                         <option value="mejora">📈 Mejoras</option>
                     </select>
-                    <button onclick="saveComment()" class="save-comment-btn">
+                    <button class="save-comment-btn" id="saveCommentBtn">
                         <i class="fas fa-save"></i> Guardar
                     </button>
                 </div>
             </div>
 
-            <div class="comments-filters">
-                <button class="filter-btn active" onclick="filterComments('all')">Todos</button>
-                <button class="filter-btn" onclick="filterComments('general')">💬 General</button>
-                <button class="filter-btn" onclick="filterComments('idea')">💡 Ideas</button>
-                <button class="filter-btn" onclick="filterComments('problema')">⚠️ Problemas</button>
-                <button class="filter-btn" onclick="filterComments('solucion')">✅ Soluciones</button>
-                <button class="filter-btn" onclick="filterComments('mejora')">📈 Mejoras</button>
+            <!-- Comment Filters -->
+            <div class="comments-filters" id="commentsFilters">
+                <button class="filter-btn active" data-filter="all">Todos</button>
+                <button class="filter-btn" data-filter="general">💬 General</button>
+                <button class="filter-btn" data-filter="idea">💡 Ideas</button>
+                <button class="filter-btn" data-filter="problema">⚠️ Problemas</button>
+                <button class="filter-btn" data-filter="solucion">✅ Soluciones</button>
+                <button class="filter-btn" data-filter="mejora">📈 Mejoras</button>
             </div>
 
+            <!-- Comments List -->
             <div class="comments-list" id="commentsList">
-                <!-- Los comentarios se generarán dinámicamente -->
+                <!-- Comments will be generated dynamically -->
             </div>
         </div>
     </div>
@@ -111,7 +120,10 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
     <script>
-        const firebaseConfig = {
+        // =================================== //
+        //            CONFIGURATION            //
+        // =================================== //
+        const FIREBASE_CONFIG = {
             apiKey: "AIzaSyBxsZq65HUIif9SYTIx6T0SlpNpZaFSpMQ",
             authDomain: "calendario-grupo-bolivar2.firebaseapp.com",
             projectId: "calendario-grupo-bolivar2",
@@ -120,63 +132,29 @@
             appId: "1:727096053646:web:3de772558a625a66b85edf"
         };
 
-        // Variables globales
+        const DAY_NAMES = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+        
+        const CATEGORY_LABELS = {
+            'general': '💬 General',
+            'idea': '💡 Ideas',
+            'problema': '⚠️ Problemas',
+            'solucion': '✅ Soluciones',
+            'mejora': '📈 Mejoras'
+        };
+
+        // =================================== //
+        //           GLOBAL VARIABLES          //
+        // =================================== //
         let currentMember = 'Duvan';
         let calendarData = {};
-        let commentsData = []; // NUEVA VARIABLE PARA COMENTARIOS
-        let currentFilter = 'all'; // NUEVA VARIABLE PARA FILTROS
+        let commentsData = [];
+        let currentFilter = 'all';
         let db = null;
         let isFirebaseEnabled = false;
 
-        // Verificar si Firebase está configurado
-        function isFirebaseConfigured() {
-            return firebaseConfig.apiKey !== "YOUR_API_KEY_HERE" &&
-                firebaseConfig.projectId !== "your-project-id";
-        }
-
-        // Inicializar Firebase solo si está configurado
-        function initFirebase() {
-            if (isFirebaseConfigured()) {
-                try {
-                    firebase.initializeApp(firebaseConfig);
-                    db = firebase.firestore();
-                    isFirebaseEnabled = true;
-                    updateConnectionStatus('connected');
-                    loadFromFirebase();
-                    loadCommentsFromFirebase(); // NUEVA LÍNEA PARA CARGAR COMENTARIOS
-                } catch (error) {
-                    console.error('Error inicializando Firebase:', error);
-                    isFirebaseEnabled = false;
-                    updateConnectionStatus('disconnected');
-                    initLocalMode();
-                }
-            } else {
-                console.log('Firebase no configurado, usando modo local');
-                isFirebaseEnabled = false;
-                updateConnectionStatus('disconnected');
-                initLocalMode();
-            }
-        }
-
-        // Actualizar estado de conexión
-        function updateConnectionStatus(status) {
-            const statusEl = document.getElementById('connectionStatus');
-            statusEl.className = `connection-status ${status}`;
-
-            switch (status) {
-                case 'connected':
-                    statusEl.textContent = '✅ Conectado a Firebase';
-                    break;
-                case 'disconnected':
-                    statusEl.textContent = '💾 Modo Local';
-                    break;
-                case 'connecting':
-                    statusEl.textContent = '🔄 Conectando...';
-                    break;
-            }
-        }
-
-        // Obtener días de la semana
+        // =================================== //
+        //         UTILITY FUNCTIONS           //
+        // =================================== //
         function getWeekDays(date) {
             const week = [];
             const startOfWeek = new Date(date);
@@ -185,14 +163,13 @@
             startOfWeek.setDate(diff);
 
             for (let i = 0; i < 7; i++) {
-                const day = new Date(startOfWeek);
-                day.setDate(startOfWeek.getDate() + i);
-                week.push(day);
+                const currentDay = new Date(startOfWeek);
+                currentDay.setDate(startOfWeek.getDate() + i);
+                week.push(currentDay);
             }
             return week;
         }
 
-        // Obtener clave de semana
         function getWeekKey(date) {
             const week = getWeekDays(date);
             const start = week[0];
@@ -202,27 +179,62 @@
             return `${year}-${month}-${day}`;
         }
 
-        // Cargar desde Firebase
+        function isFirebaseConfigured() {
+            return FIREBASE_CONFIG.apiKey !== "YOUR_API_KEY_HERE" &&
+                   FIREBASE_CONFIG.projectId !== "your-project-id";
+        }
+
+        function updateConnectionStatus(status) {
+            const statusEl = document.getElementById('connectionStatus');
+            statusEl.className = `connection-status ${status}`;
+
+            const statusMessages = {
+                connected: '✅ Conectado a Firebase',
+                disconnected: '💾 Modo Local',
+                connecting: '🔄 Conectando...'
+            };
+
+            statusEl.textContent = statusMessages[status] || statusMessages.connecting;
+        }
+
+        // =================================== //
+        //         FIREBASE FUNCTIONS          //
+        // =================================== //
+        function initFirebase() {
+            if (!isFirebaseConfigured()) {
+                console.log('Firebase no configurado, usando modo local');
+                initLocalMode();
+                return;
+            }
+
+            try {
+                firebase.initializeApp(FIREBASE_CONFIG);
+                db = firebase.firestore();
+                isFirebaseEnabled = true;
+                updateConnectionStatus('connected');
+                loadFromFirebase();
+                loadCommentsFromFirebase();
+            } catch (error) {
+                console.error('Error inicializando Firebase:', error);
+                isFirebaseEnabled = false;
+                updateConnectionStatus('disconnected');
+                initLocalMode();
+            }
+        }
+
         async function loadFromFirebase() {
             try {
                 const weekKey = getWeekKey(new Date());
                 const doc = await db.collection('calendar').doc(weekKey).get();
 
-                if (doc.exists) {
-                    calendarData = doc.data().days || {};
-                } else {
+                calendarData = doc.exists ? (doc.data().days || {}) : {};
+                
+                if (!doc.exists) {
                     initCalendarData();
                 }
 
                 generateCalendar();
-
-                // Escuchar cambios en tiempo real
-                db.collection('calendar').doc(weekKey).onSnapshot((doc) => {
-                    if (doc.exists) {
-                        calendarData = doc.data().days || {};
-                        generateCalendar();
-                    }
-                });
+                setupCalendarListener(weekKey);
 
             } catch (error) {
                 console.error('Error cargando desde Firebase:', error);
@@ -230,27 +242,15 @@
             }
         }
 
-        // NUEVA FUNCIÓN: Cargar comentarios desde Firebase
         async function loadCommentsFromFirebase() {
             try {
                 const weekKey = getWeekKey(new Date());
                 const doc = await db.collection('comments').doc(weekKey).get();
 
-                if (doc.exists) {
-                    commentsData = doc.data().comments || [];
-                } else {
-                    commentsData = [];
-                }
-
+                commentsData = doc.exists ? (doc.data().comments || []) : [];
+                
                 generateComments();
-
-                // Escuchar cambios en tiempo real para comentarios
-                db.collection('comments').doc(weekKey).onSnapshot((doc) => {
-                    if (doc.exists) {
-                        commentsData = doc.data().comments || [];
-                        generateComments();
-                    }
-                });
+                setupCommentsListener(weekKey);
 
             } catch (error) {
                 console.error('Error cargando comentarios desde Firebase:', error);
@@ -258,7 +258,89 @@
             }
         }
 
-        // NUEVA FUNCIÓN: Cargar comentarios desde localStorage
+        function setupCalendarListener(weekKey) {
+            db.collection('calendar').doc(weekKey).onSnapshot((doc) => {
+                if (doc.exists) {
+                    calendarData = doc.data().days || {};
+                    generateCalendar();
+                }
+            });
+        }
+
+        function setupCommentsListener(weekKey) {
+            db.collection('comments').doc(weekKey).onSnapshot((doc) => {
+                if (doc.exists) {
+                    commentsData = doc.data().comments || [];
+                    generateComments();
+                }
+            });
+        }
+
+        async function saveCalendarData() {
+            const weekKey = getWeekKey(new Date());
+            
+            // Always save locally
+            localStorage.setItem(`calendar-${weekKey}`, JSON.stringify(calendarData));
+
+            // Save to Firebase if available
+            if (isFirebaseEnabled && db) {
+                try {
+                    await db.collection('calendar').doc(weekKey).set({
+                        days: calendarData,
+                        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                } catch (error) {
+                    console.error('Error guardando en Firebase:', error);
+                }
+            }
+        }
+
+        async function saveCommentsData() {
+            const weekKey = getWeekKey(new Date());
+            
+            // Always save locally
+            localStorage.setItem(`comments-${weekKey}`, JSON.stringify(commentsData));
+
+            // Save to Firebase if available
+            if (isFirebaseEnabled && db) {
+                try {
+                    await db.collection('comments').doc(weekKey).set({
+                        comments: commentsData,
+                        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                } catch (error) {
+                    console.error('Error guardando comentarios en Firebase:', error);
+                }
+            }
+        }
+
+        // =================================== //
+        //          LOCAL MODE FUNCTIONS       //
+        // =================================== //
+        function initLocalMode() {
+            updateConnectionStatus('disconnected');
+            loadFromLocal();
+            loadCommentsFromLocal();
+        }
+
+        function loadFromLocal() {
+            const weekKey = getWeekKey(new Date());
+            const localData = localStorage.getItem(`calendar-${weekKey}`);
+
+            if (localData) {
+                try {
+                    calendarData = JSON.parse(localData);
+                } catch (error) {
+                    console.error('Error parsing local calendar data:', error);
+                    initCalendarData();
+                }
+            } else {
+                initCalendarData();
+            }
+
+            generateCalendar();
+        }
+
         function loadCommentsFromLocal() {
             const weekKey = getWeekKey(new Date());
             const localComments = localStorage.getItem(`comments-${weekKey}`);
@@ -267,6 +349,7 @@
                 try {
                     commentsData = JSON.parse(localComments);
                 } catch (error) {
+                    console.error('Error parsing local comments data:', error);
                     commentsData = [];
                 }
             } else {
@@ -276,26 +359,9 @@
             generateComments();
         }
 
-        // Modo local
-        function initLocalMode() {
-            const weekKey = getWeekKey(new Date());
-            const localData = localStorage.getItem(`calendar-${weekKey}`);
-
-            if (localData) {
-                try {
-                    calendarData = JSON.parse(localData);
-                } catch (error) {
-                    initCalendarData();
-                }
-            } else {
-                initCalendarData();
-            }
-
-            generateCalendar();
-            loadCommentsFromLocal(); // NUEVA LÍNEA PARA CARGAR COMENTARIOS EN MODO LOCAL
-        }
-
-        // Inicializar datos por defecto
+        // =================================== //
+        //        DATA INITIALIZATION          //
+        // =================================== //
         function initCalendarData() {
             const today = new Date();
             const currentWeek = getWeekDays(today);
@@ -311,7 +377,7 @@
                 }
             });
 
-            // Datos de ejemplo
+            // Example data for first day
             const exampleDate = currentWeek[0].toDateString();
             if (!calendarData[exampleDate].objective) {
                 calendarData[exampleDate] = {
@@ -326,174 +392,87 @@
             }
         }
 
-        // Guardar datos
-        async function saveData() {
-            const weekKey = getWeekKey(new Date());
-
-            // Guardar localmente siempre
-            localStorage.setItem(`calendar-${weekKey}`, JSON.stringify(calendarData));
-
-            // Guardar en Firebase si está disponible
-            if (isFirebaseEnabled && db) {
-                try {
-                    await db.collection('calendar').doc(weekKey).set({
-                        days: calendarData,
-                        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                } catch (error) {
-                    console.error('Error guardando en Firebase:', error);
-                }
-            }
-        }
-
-        // NUEVA FUNCIÓN: Guardar comentarios
-        async function saveCommentsData() {
-            const weekKey = getWeekKey(new Date());
-
-            // Guardar localmente siempre
-            localStorage.setItem(`comments-${weekKey}`, JSON.stringify(commentsData));
-
-            // Guardar en Firebase si está disponible
-            if (isFirebaseEnabled && db) {
-                try {
-                    await db.collection('comments').doc(weekKey).set({
-                        comments: commentsData,
-                        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                } catch (error) {
-                    console.error('Error guardando comentarios en Firebase:', error);
-                }
-            }
-        }
-
-        // Generar calendario
+        // =================================== //
+        //         CALENDAR FUNCTIONS          //
+        // =================================== //
         function generateCalendar() {
             const calendar = document.getElementById('calendar');
             const today = new Date();
             const weekDays = getWeekDays(today);
-            const dayNames = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 
             calendar.innerHTML = '';
 
-            // Headers
-            dayNames.forEach(dayName => {
+            // Generate day headers
+            DAY_NAMES.forEach(dayName => {
                 const header = document.createElement('div');
                 header.className = 'day-header';
                 header.textContent = dayName;
                 calendar.appendChild(header);
             });
 
-            // Day cards
+            // Generate day cards
             weekDays.forEach((date, index) => {
                 const dateKey = date.toDateString();
-                const dayData = calendarData[dateKey] || { objective: '', tasks: [], assignedTo: currentMember };
+                const dayData = calendarData[dateKey] || { 
+                    objective: '', 
+                    tasks: [], 
+                    assignedTo: currentMember 
+                };
 
-                const dayCard = document.createElement('div');
-                dayCard.className = `day-card ${index >= 5 ? 'weekend' : ''} ${date.toDateString() === today.toDateString() ? 'today' : ''}`;
-
-                const completedTasks = dayData.tasks.filter(t => t.completed).length;
-                const totalTasks = dayData.tasks.length;
-                const progressPercent = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
-
-                dayCard.innerHTML = `
-                    <div class="day-number">${date.getDate()}</div>
-                    <input type="text" class="objective-input" placeholder="Objetivo del día..." 
-                           value="${dayData.objective}" onchange="updateObjective('${dateKey}', this.value)">
-                    
-                    <div class="checklist" id="checklist-${dateKey}">
-                        ${dayData.tasks.map((task, i) => `
-                            <div class="checklist-item">
-                                <input type="checkbox" ${task.completed ? 'checked' : ''} 
-                                       onchange="toggleTask('${dateKey}', ${i})">
-                                <input type="text" value="${task.text}" 
-                                       onchange="updateTask('${dateKey}', ${i}, this.value)">
-                                <button class="delete-task-btn" onclick="deleteTask('${dateKey}', ${i})">❌</button>
-                            </div>
-                        `).join('')}
-                    </div>
-                    
-                    <button class="add-task-btn" onclick="addTask('${dateKey}')">+ Agregar Tarea</button>
-                    <button class="reset-day-btn" onclick="resetDay('${dateKey}')">🔄 Reiniciar Día</button>
-                    
-                    <div class="day-progress">
-                        <div class="day-progress-bar">
-                            <div class="day-progress-fill" style="width: ${progressPercent}%"></div>
-                        </div>
-                        <div class="day-progress-text">${completedTasks}/${totalTasks} completadas</div>
-                    </div>
-                `;
-
+                const dayCard = createDayCard(date, dateKey, dayData, index);
                 calendar.appendChild(dayCard);
             });
 
             updateWeekProgress();
         }
 
-        // Funciones de interacción
-        function selectMember(member) {
-            currentMember = member;
-            document.querySelectorAll('.team-member').forEach(el => el.classList.remove('active'));
-            event.target.closest('.team-member').classList.add('active');
-        }
+        function createDayCard(date, dateKey, dayData, index) {
+            const today = new Date();
+            const isToday = date.toDateString() === today.toDateString();
+            const isWeekend = index >= 5;
+            
+            const completedTasks = dayData.tasks.filter(t => t.completed).length;
+            const totalTasks = dayData.tasks.length;
+            const progressPercent = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
 
-        function updateObjective(dateKey, value) {
-            if (!calendarData[dateKey]) {
-                calendarData[dateKey] = { objective: '', tasks: [], assignedTo: currentMember };
-            }
-            calendarData[dateKey].objective = value;
-            calendarData[dateKey].assignedTo = currentMember;
-            saveData();
-        }
+            const dayCard = document.createElement('div');
+            dayCard.className = `day-card ${isWeekend ? 'weekend' : ''} ${isToday ? 'today' : ''}`;
 
-        function addTask(dateKey) {
-            if (!calendarData[dateKey]) {
-                calendarData[dateKey] = { objective: '', tasks: [], assignedTo: currentMember };
-            }
-            calendarData[dateKey].tasks.push({ text: 'Nueva tarea', completed: false });
-            saveData();
-            generateCalendar();
-        }
+            dayCard.innerHTML = `
+                <div class="day-number">${date.getDate()}</div>
+                <input type="text" class="objective-input" placeholder="Objetivo del día..." 
+                       value="${dayData.objective}" data-date="${dateKey}">
+                
+                <div class="checklist" id="checklist-${dateKey}">
+                    ${dayData.tasks.map((task, i) => `
+                        <div class="checklist-item">
+                            <input type="checkbox" ${task.completed ? 'checked' : ''} 
+                                   data-date="${dateKey}" data-task-index="${i}">
+                            <input type="text" value="${task.text}" 
+                                   data-date="${dateKey}" data-task-index="${i}" data-task-text="true">
+                            <button class="delete-task-btn" data-date="${dateKey}" data-task-index="${i}">❌</button>
+                        </div>
+                    `).join('')}
+                </div>
+                
+                <div class="card-actions">
+                    <button class="add-task-btn" data-date="${dateKey}">+ Agregar Tarea</button>
+                    <button class="reset-day-btn" data-date="${dateKey}">🔄 Reiniciar</button>
+                </div>
+                
+                <div class="day-progress">
+                    <div class="day-progress-bar">
+                        <div class="day-progress-fill" style="width: ${progressPercent}%"></div>
+                    </div>
+                    <div class="day-progress-text">${completedTasks}/${totalTasks} completadas</div>
+                </div>
+            `;
 
-        function updateTask(dateKey, taskIndex, value) {
-            if (calendarData[dateKey] && calendarData[dateKey].tasks[taskIndex]) {
-                calendarData[dateKey].tasks[taskIndex].text = value;
-                saveData();
-            }
-        }
-
-        function toggleTask(dateKey, taskIndex) {
-            if (calendarData[dateKey] && calendarData[dateKey].tasks[taskIndex]) {
-                calendarData[dateKey].tasks[taskIndex].completed = !calendarData[dateKey].tasks[taskIndex].completed;
-                saveData();
-                generateCalendar();
-            }
-        }
-
-        // ✅ Nueva función: eliminar tarea
-        function deleteTask(dateKey, taskIndex) {
-            if (calendarData[dateKey] && calendarData[dateKey].tasks[taskIndex]) {
-                calendarData[dateKey].tasks.splice(taskIndex, 1);
-                saveData();
-                generateCalendar();
-            }
-        }
-
-        // ✅ Nueva función: reiniciar el día
-        function resetDay(dateKey) {
-            if (confirm("¿Seguro que quieres reiniciar este día? Se borrarán todas las tareas.")) {
-                calendarData[dateKey] = {
-                    objective: '',
-                    tasks: [],
-                    assignedTo: currentMember
-                };
-                saveData();
-                generateCalendar();
-            }
+            return dayCard;
         }
 
         function updateWeekProgress() {
-            const today = new Date();
-            const weekDays = getWeekDays(today);
+            const weekDays = getWeekDays(new Date());
             let totalTasks = 0;
             let completedTasks = 0;
 
@@ -507,14 +486,79 @@
             });
 
             const progressPercent = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+            
             document.getElementById('weekProgress').style.width = progressPercent + '%';
             document.getElementById('completedTasks').textContent = `${completedTasks} tareas completadas`;
             document.getElementById('totalTasks').textContent = `${totalTasks} tareas totales`;
         }
 
-        // NUEVAS FUNCIONES PARA COMENTARIOS
+        // =================================== //
+        //         CALENDAR ACTIONS            //
+        // =================================== //
+        function updateObjective(dateKey, value) {
+            if (!calendarData[dateKey]) {
+                calendarData[dateKey] = { objective: '', tasks: [], assignedTo: currentMember };
+            }
+            calendarData[dateKey].objective = value;
+            calendarData[dateKey].assignedTo = currentMember;
+            saveCalendarData();
+        }
 
-        // Alternar panel de comentarios
+        function addTask(dateKey) {
+            if (!calendarData[dateKey]) {
+                calendarData[dateKey] = { objective: '', tasks: [], assignedTo: currentMember };
+            }
+            calendarData[dateKey].tasks.push({ text: 'Nueva tarea', completed: false });
+            saveCalendarData();
+            generateCalendar();
+        }
+
+        function updateTask(dateKey, taskIndex, value) {
+            if (calendarData[dateKey] && calendarData[dateKey].tasks[taskIndex]) {
+                calendarData[dateKey].tasks[taskIndex].text = value;
+                saveCalendarData();
+            }
+        }
+
+        function toggleTask(dateKey, taskIndex) {
+            if (calendarData[dateKey] && calendarData[dateKey].tasks[taskIndex]) {
+                calendarData[dateKey].tasks[taskIndex].completed = !calendarData[dateKey].tasks[taskIndex].completed;
+                saveCalendarData();
+                generateCalendar();
+            }
+        }
+
+        function deleteTask(dateKey, taskIndex) {
+            if (!calendarData[dateKey] || !calendarData[dateKey].tasks[taskIndex]) return;
+            
+            if (confirm("¿Seguro que quieres eliminar esta tarea?")) {
+                calendarData[dateKey].tasks.splice(taskIndex, 1);
+                saveCalendarData();
+                generateCalendar();
+            }
+        }
+
+        function resetDay(dateKey) {
+            if (confirm("¿Seguro que quieres reiniciar este día? Se borrarán todas las tareas.")) {
+                calendarData[dateKey] = {
+                    objective: '',
+                    tasks: [],
+                    assignedTo: currentMember
+                };
+                saveCalendarData();
+                generateCalendar();
+            }
+        }
+
+        function selectMember(member) {
+            currentMember = member;
+            document.querySelectorAll('.team-member').forEach(el => el.classList.remove('active'));
+            document.querySelector(`[data-member="${member}"]`).classList.add('active');
+        }
+
+        // =================================== //
+        //        COMMENTS FUNCTIONS           //
+        // =================================== //
         function toggleCommentsPanel() {
             const section = document.getElementById('commentsSection');
             const icon = document.getElementById('toggleIcon');
@@ -522,15 +566,12 @@
             section.classList.toggle('expanded');
             
             if (section.classList.contains('expanded')) {
-                icon.classList.remove('fa-chevron-up');
-                icon.classList.add('fa-chevron-down');
+                icon.className = 'fas fa-chevron-down';
             } else {
-                icon.classList.remove('fa-chevron-down');
-                icon.classList.add('fa-chevron-up');
+                icon.className = 'fas fa-chevron-up';
             }
         }
 
-        // Guardar comentario
         function saveComment() {
             const title = document.getElementById('commentTitle').value.trim();
             const text = document.getElementById('commentText').value.trim();
@@ -543,9 +584,9 @@
 
             const comment = {
                 id: Date.now().toString(),
-                title: title,
-                text: text,
-                category: category,
+                title,
+                text,
+                category,
                 author: currentMember,
                 date: new Date().toISOString(),
                 timestamp: Date.now()
@@ -554,22 +595,21 @@
             commentsData.unshift(comment);
             saveCommentsData();
             generateComments();
+            clearCommentForm();
+        }
 
-            // Limpiar formulario
+        function clearCommentForm() {
             document.getElementById('commentTitle').value = '';
             document.getElementById('commentText').value = '';
             document.getElementById('commentCategory').value = 'general';
         }
 
-        // Generar lista de comentarios
         function generateComments() {
             const commentsList = document.getElementById('commentsList');
             
-            // Filtrar comentarios según el filtro activo
-            let filteredComments = commentsData;
-            if (currentFilter !== 'all') {
-                filteredComments = commentsData.filter(comment => comment.category === currentFilter);
-            }
+            const filteredComments = currentFilter === 'all' 
+                ? commentsData 
+                : commentsData.filter(comment => comment.category === currentFilter);
 
             if (filteredComments.length === 0) {
                 commentsList.innerHTML = `
@@ -581,60 +621,48 @@
                 return;
             }
 
-            commentsList.innerHTML = filteredComments.map(comment => {
-                const date = new Date(comment.date);
-                const formattedDate = date.toLocaleDateString('es-ES', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                });
+            commentsList.innerHTML = filteredComments.map(createCommentHTML).join('');
+        }
 
-                return `
-                    <div class="comment-item ${comment.category}">
-                        <div class="comment-header">
-                            <h4 class="comment-title">${comment.title}</h4>
-                            <div class="comment-meta">
-                                <span class="comment-category">${getCategoryLabel(comment.category)}</span>
-                                <span class="comment-author">Por: ${comment.author}</span>
-                                <span class="comment-date">${formattedDate}</span>
-                            </div>
-                        </div>
-                        <div class="comment-text">${comment.text}</div>
-                        <div class="comment-actions">
-                            <button class="delete-comment-btn" onclick="deleteComment('${comment.id}')">
-                                <i class="fas fa-trash"></i> Eliminar
-                            </button>
+        function createCommentHTML(comment) {
+            const date = new Date(comment.date);
+            const formattedDate = date.toLocaleDateString('es-ES', {
+                day: '2-digit',
+                month: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+
+            return `
+                <div class="comment-item ${comment.category}">
+                    <div class="comment-header">
+                        <h4 class="comment-title">${comment.title}</h4>
+                        <div class="comment-meta">
+                            <span class="comment-category">${CATEGORY_LABELS[comment.category]}</span>
+                            <span class="comment-author">Por: ${comment.author}</span>
+                            <span class="comment-date">${formattedDate}</span>
                         </div>
                     </div>
-                `;
-            }).join('');
+                    <div class="comment-text">${comment.text}</div>
+                    <div class="comment-actions">
+                        <button class="delete-comment-btn" data-comment-id="${comment.id}">
+                            <i class="fas fa-trash"></i> Eliminar
+                        </button>
+                    </div>
+                </div>
+            `;
         }
 
-        // Obtener etiqueta de categoría
-        function getCategoryLabel(category) {
-            const labels = {
-                'general': '💬 General',
-                'idea': '💡 Ideas',
-                'problema': '⚠️ Problemas',
-                'solucion': '✅ Soluciones',
-                'mejora': '📈 Mejoras'
-            };
-            return labels[category] || '💬 General';
-        }
-
-        // Filtrar comentarios
         function filterComments(category) {
             currentFilter = category;
             
-            // Actualizar botones activos
+            // Update active filter button
             document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
+            document.querySelector(`[data-filter="${category}"]`).classList.add('active');
             
             generateComments();
         }
 
-        // Eliminar comentario
         function deleteComment(commentId) {
             if (confirm('¿Seguro que quieres eliminar este comentario?')) {
                 commentsData = commentsData.filter(comment => comment.id !== commentId);
@@ -643,38 +671,84 @@
             }
         }
 
-        // Función de editar comentario removida - solo eliminación disponible
+        // =================================== //
+        //          EVENT LISTENERS            //
+        // =================================== //
+        function setupEventListeners() {
+            // Team member selection
+            document.addEventListener('click', (e) => {
+                if (e.target.closest('.team-member')) {
+                    const member = e.target.closest('.team-member').dataset.member;
+                    selectMember(member);
+                }
+            });
 
-        // Inicializar aplicación
-        document.addEventListener('DOMContentLoaded', function () {
+            // Calendar interactions
+            document.addEventListener('change', (e) => {
+                const target = e.target;
+                const dateKey = target.dataset.date;
+                const taskIndex = parseInt(target.dataset.taskIndex);
+
+                if (target.classList.contains('objective-input')) {
+                    updateObjective(dateKey, target.value);
+                } else if (target.type === 'checkbox' && target.dataset.taskIndex !== undefined) {
+                    toggleTask(dateKey, taskIndex);
+                } else if (target.dataset.taskText) {
+                    updateTask(dateKey, taskIndex, target.value);
+                }
+            });
+
+            document.addEventListener('click', (e) => {
+                const target = e.target;
+                const dateKey = target.dataset.date;
+                const taskIndex = parseInt(target.dataset.taskIndex);
+
+                if (target.classList.contains('add-task-btn')) {
+                    addTask(dateKey);
+                } else if (target.classList.contains('reset-day-btn')) {
+                    resetDay(dateKey);
+                } else if (target.classList.contains('delete-task-btn')) {
+                    deleteTask(dateKey, taskIndex);
+                }
+            });
+
+            // Comments interactions
+            document.getElementById('toggleCommentsBtn').addEventListener('click', toggleCommentsPanel);
+            document.getElementById('saveCommentBtn').addEventListener('click', saveComment);
+
+            document.addEventListener('click', (e) => {
+                if (e.target.classList.contains('filter-btn')) {
+                    const filter = e.target.dataset.filter;
+                    filterComments(filter);
+                } else if (e.target.closest('.delete-comment-btn')) {
+                    const commentId = e.target.closest('.delete-comment-btn').dataset.commentId;
+                    deleteComment(commentId);
+                }
+            });
+
+            // Save before page unload
+            window.addEventListener('beforeunload', () => {
+                const weekKey = getWeekKey(new Date());
+                localStorage.setItem(`calendar-${weekKey}`, JSON.stringify(calendarData));
+                localStorage.setItem(`comments-${weekKey}`, JSON.stringify(commentsData));
+            });
+        }
+
+        // =================================== //
+        //           INITIALIZATION            //
+        // =================================== //
+        function initApplication() {
             updateConnectionStatus('connecting');
+            setupEventListeners();
+            
             setTimeout(() => {
                 initFirebase();
             }, 1000);
-        });
+        }
 
-        // Guardar antes de salir
-        window.addEventListener('beforeunload', function () {
-            const weekKey = getWeekKey(new Date());
-            localStorage.setItem(`calendar-${weekKey}`, JSON.stringify(calendarData));
-            localStorage.setItem(`comments-${weekKey}`, JSON.stringify(commentsData)); // NUEVA LÍNEA
-        });
-
-        // NUEVA FUNCIÓN: Manejar scroll para mostrar comentarios automáticamente
-        window.addEventListener('scroll', function() {
-            const scrolled = window.pageYOffset;
-            const viewportHeight = window.innerHeight;
-            const fullHeight = document.body.offsetHeight;
-            
-            // Si el usuario hace scroll hacia abajo en la parte inferior
-            if (scrolled + viewportHeight >= fullHeight - 100) {
-                document.getElementById('commentsSection').classList.add('expanded');
-                document.getElementById('toggleIcon').classList.remove('fa-chevron-up');
-                document.getElementById('toggleIcon').classList.add('fa-chevron-down');
-            }
-        });
+        // Start application when DOM is ready
+        document.addEventListener('DOMContentLoaded', initApplication);
     </script>
-
 </body>
 
 </html>
