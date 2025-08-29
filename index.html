@@ -17,7 +17,7 @@
         <h1>🎯 Reto Grupo Bolívar</h1>
     </nav>
 
-    <!-- Connection Status -->git 
+    <!-- Connection Status -->
     <div class="connection-status connecting" id="connectionStatus">
         🔄 Conectando...
     </div>
@@ -151,6 +151,7 @@
         let currentFilter = 'all';
         let db = null;
         let isFirebaseEnabled = false;
+        let commentsListener = null; // Para controlar el listener
 
         // =================================== //
         //         UTILITY FUNCTIONS           //
@@ -268,11 +269,33 @@
         }
 
         function setupCommentsListener(weekKey) {
-            db.collection('comments').doc(weekKey).onSnapshot((doc) => {
+            // Limpiamos el listener anterior si existe
+            if (commentsListener) {
+                commentsListener();
+            }
+
+            // Creamos el nuevo listener
+            commentsListener = db.collection('comments').doc(weekKey).onSnapshot((doc) => {
                 if (doc.exists) {
-                    commentsData = doc.data().comments || [];
-                    generateComments();
+                    const newCommentsData = doc.data().comments || [];
+                    
+                    // Solo actualizamos si realmente hay cambios
+                    if (JSON.stringify(newCommentsData) !== JSON.stringify(commentsData)) {
+                        commentsData = newCommentsData;
+                        
+                        // Guardamos también localmente para respaldo
+                        localStorage.setItem(`comments-${weekKey}`, JSON.stringify(commentsData));
+                        
+                        // Regeneramos los comentarios manteniendo el filtro actual
+                        generateComments();
+                        
+                        console.log('Comentarios sincronizados desde Firebase:', commentsData.length);
+                    }
                 }
+            }, (error) => {
+                console.error('Error en listener de comentarios:', error);
+                // Fallback a modo local si hay error
+                loadCommentsFromLocal();
             });
         }
 
@@ -288,7 +311,7 @@
                     await db.collection('calendar').doc(weekKey).set({
                         days: calendarData,
                         lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-                    });
+                    }, { merge: true }); // Usamos merge para no sobrescribir otros campos
                 } catch (error) {
                     console.error('Error guardando en Firebase:', error);
                 }
@@ -298,7 +321,7 @@
         async function saveCommentsData() {
             const weekKey = getWeekKey(new Date());
             
-            // Always save locally
+            // Always save locally first
             localStorage.setItem(`comments-${weekKey}`, JSON.stringify(commentsData));
 
             // Save to Firebase if available
@@ -307,9 +330,12 @@
                     await db.collection('comments').doc(weekKey).set({
                         comments: commentsData,
                         lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-                    });
+                    }, { merge: true }); // Usamos merge para evitar conflictos
+                    
+                    console.log('Comentarios guardados en Firebase:', commentsData.length);
                 } catch (error) {
                     console.error('Error guardando comentarios en Firebase:', error);
+                    // El dato ya está guardado localmente, así que no perdemos la información
                 }
             }
         }
@@ -583,7 +609,7 @@
             }
 
             const comment = {
-                id: Date.now().toString(),
+                id: Date.now().toString() + '-' + Math.random().toString(36).substr(2, 9), // ID más único
                 title,
                 text,
                 category,
@@ -592,10 +618,19 @@
                 timestamp: Date.now()
             };
 
+            // Agregamos el comentario al principio del array
             commentsData.unshift(comment);
+            
+            // Guardamos inmediatamente
             saveCommentsData();
+            
+            // Regeneramos la vista
             generateComments();
+            
+            // Limpiamos el formulario
             clearCommentForm();
+            
+            console.log('Comentario guardado:', comment);
         }
 
         function clearCommentForm() {
@@ -607,9 +642,13 @@
         function generateComments() {
             const commentsList = document.getElementById('commentsList');
             
+            // Filtramos los comentarios según el filtro activo
             const filteredComments = currentFilter === 'all' 
                 ? commentsData 
                 : commentsData.filter(comment => comment.category === currentFilter);
+
+            // Ordenamos por timestamp (más recientes primero)
+            filteredComments.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
             if (filteredComments.length === 0) {
                 commentsList.innerHTML = `
@@ -665,9 +704,16 @@
 
         function deleteComment(commentId) {
             if (confirm('¿Seguro que quieres eliminar este comentario?')) {
+                const initialLength = commentsData.length;
                 commentsData = commentsData.filter(comment => comment.id !== commentId);
-                saveCommentsData();
-                generateComments();
+                
+                if (commentsData.length < initialLength) {
+                    saveCommentsData();
+                    generateComments();
+                    console.log('Comentario eliminado:', commentId);
+                } else {
+                    console.warn('No se encontró el comentario para eliminar:', commentId);
+                }
             }
         }
 
@@ -732,6 +778,19 @@
                 localStorage.setItem(`calendar-${weekKey}`, JSON.stringify(calendarData));
                 localStorage.setItem(`comments-${weekKey}`, JSON.stringify(commentsData));
             });
+
+            // Enter key para guardar comentarios
+            document.getElementById('commentTitle').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    document.getElementById('commentText').focus();
+                }
+            });
+
+            document.getElementById('commentText').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && e.ctrlKey) {
+                    saveComment();
+                }
+            });
         }
 
         // =================================== //
@@ -746,9 +805,15 @@
             }, 1000);
         }
 
+        // Función para debug - puedes eliminar en producción
+        window.debugComments = function() {
+            console.log('Comentarios actuales:', commentsData);
+            console.log('Firebase habilitado:', isFirebaseEnabled);
+            console.log('Filtro actual:', currentFilter);
+        };
+
         // Start application when DOM is ready
         document.addEventListener('DOMContentLoaded', initApplication);
     </script>
 </body>
-
 </html>
