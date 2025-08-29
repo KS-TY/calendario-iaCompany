@@ -14,7 +14,7 @@
 <body>
     <!-- Navigation -->
     <nav class="navbar">
-        <h1>🎯 Reto Grupo Bolívar</h1>
+        <h1> Reto Grupo Bolívar</h1>
     </nav>
 
     <!-- Connection Status -->
@@ -32,7 +32,7 @@
                 <div class="progress-bar">
                     <div class="progress-fill" id="weekProgress"></div>
                 </div>
-                <div class="stats">
+                <div class="stats" style="display:flex;gap:1rem;">
                     <span id="completedTasks">0 tareas completadas</span>
                     <span id="totalTasks">0 tareas totales</span>
                 </div>
@@ -41,22 +41,10 @@
             <!-- Team Selector -->
             <div class="team-selector">
                 <h3>👥 Miembros del Equipo</h3>
-                <div class="team-member active" data-member="Duvan">
-                    <span>🔵</span>
-                    <span>Duvan</span>
-                </div>
-                <div class="team-member" data-member="Juanse">
-                    <span>🟢</span>
-                    <span>Juanse</span>
-                </div>
-                <div class="team-member" data-member="Isa">
-                    <span>🟡</span>
-                    <span>Isa</span>
-                </div>
-                <div class="team-member" data-member="Raul">
-                    <span>🟠</span>
-                    <span>Raul</span>
-                </div>
+                <div class="team-member active" data-member="Duvan"><span>🔵</span><span>Duvan</span></div>
+                <div class="team-member" data-member="Juanse"><span>🟢</span><span>Juanse</span></div>
+                <div class="team-member" data-member="Isa"><span>🟡</span><span>Isa</span></div>
+                <div class="team-member" data-member="Raul"><span>🟠</span><span>Raul</span></div>
             </div>
         </div>
 
@@ -69,12 +57,12 @@
     <!-- Comments Section -->
     <div class="comments-section" id="commentsSection">
         <div class="comments-header">
-            <h2>📝 Comentarios y Aportes de la Semana</h2>
-            <button class="toggle-comments-btn" id="toggleCommentsBtn">
+            <h2 style="margin:0;font-size:1rem;">📝 Comentarios y Aportes de la Semana</h2>
+            <button class="toggle-comments-btn" id="toggleCommentsBtn" title="Expandir/Contraer">
                 <i class="fas fa-chevron-up" id="toggleIcon"></i>
             </button>
         </div>
-        
+
         <div class="comments-panel" id="commentsPanel">
             <!-- Comment Form -->
             <div class="comment-form">
@@ -84,22 +72,20 @@
                 <div class="form-group">
                     <textarea id="commentText" placeholder="Escribe tu comentario o aporte aquí..." class="comment-textarea"></textarea>
                 </div>
-                <div class="form-actions">
-                    <select id="commentCategory" class="comment-select">
+                <div class="form-actions" style="display:flex;gap:.5rem;align-items:center;justify-content:space-between">
+                    <select id="commentCategory" class="comment-select" style="max-width:48%">
                         <option value="general">💬 General</option>
                         <option value="idea">💡 Ideas</option>
                         <option value="problema">⚠️ Problemas</option>
                         <option value="solucion">✅ Soluciones</option>
                         <option value="mejora">📈 Mejoras</option>
                     </select>
-                    <button class="save-comment-btn" id="saveCommentBtn">
-                        <i class="fas fa-save"></i> Guardar
-                    </button>
+                    <button class="save-comment-btn" id="saveCommentBtn"><i class="fas fa-save"></i> Guardar</button>
                 </div>
             </div>
 
             <!-- Comment Filters -->
-            <div class="comments-filters" id="commentsFilters">
+            <div class="comments-filters" id="commentsFilters" style="margin-top:.8rem">
                 <button class="filter-btn active" data-filter="all">Todos</button>
                 <button class="filter-btn" data-filter="general">💬 General</button>
                 <button class="filter-btn" data-filter="idea">💡 Ideas</button>
@@ -109,645 +95,660 @@
             </div>
 
             <!-- Comments List -->
-            <div class="comments-list" id="commentsList">
+            <div class="comments-list" id="commentsList" style="margin-top:.6rem">
                 <!-- Comments will be generated dynamically -->
             </div>
         </div>
     </div>
 
-    <!-- Firebase Scripts -->
+    <!-- Firebase compat (igual a lo que ya usas en el calendario) -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 
     <script>
-        // =================================== //
-        //            CONFIGURATION            //
-        // =================================== //
-        const FIREBASE_CONFIG = {
-            apiKey: "AIzaSyBxsZq65HUIif9SYTIx6T0SlpNpZaFSpMQ",
-            authDomain: "calendario-grupo-bolivar2.firebaseapp.com",
-            projectId: "calendario-grupo-bolivar2",
-            storageBucket: "calendario-grupo-bolivar2.firebasestorage.app",
-            messagingSenderId: "727096053646",
-            appId: "1:727096053646:web:3de772558a625a66b85edf"
+    // =================================== //
+    //            CONFIGURATION            //
+    // =================================== //
+    const FIREBASE_CONFIG = {
+        apiKey: "AIzaSyBxsZq65HUIif9SYTIx6T0SlpNpZaFSpMQ",
+        authDomain: "calendario-grupo-bolivar2.firebaseapp.com",
+        projectId: "calendario-grupo-bolivar2",
+        storageBucket: "calendario-grupo-bolivar2.firebasestorage.app",
+        messagingSenderId: "727096053646",
+        appId: "1:727096053646:web:3de772558a625a66b85edf"
+    };
+
+    const DAY_NAMES = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
+    const CATEGORY_LABELS = {
+        'general': '💬 General',
+        'idea': '💡 Ideas',
+        'problema': '⚠️ Problemas',
+        'solucion': '✅ Soluciones',
+        'mejora': '📈 Mejoras'
+    };
+
+    // =================================== //
+    //           GLOBAL VARIABLES          //
+    // =================================== //
+    let currentMember = 'Duvan';
+    let calendarData = {};
+    let commentsData = [];
+    let currentFilter = 'all';
+    let db = null;
+    let isFirebaseEnabled = false;
+    let commentsListener = null; // unsubscribe function for comments realtime
+
+    // =================================== //
+    //         UTILITY FUNCTIONS           //
+    // =================================== //
+    function getWeekDays(date){
+        const week=[];
+        const startOfWeek=new Date(date);
+        const day=startOfWeek.getDay();
+        const diff=startOfWeek.getDate() - day + (day === 0 ? -6 : 1);
+        startOfWeek.setDate(diff);
+        for(let i=0;i<7;i++){
+            const currentDay=new Date(startOfWeek);
+            currentDay.setDate(startOfWeek.getDate()+i);
+            week.push(currentDay);
+        }
+        return week;
+    }
+
+    function getWeekKey(date){
+        const week = getWeekDays(date);
+        const start = week[0];
+        const year = start.getFullYear();
+        const month = String(start.getMonth()+1).padStart(2,'0');
+        const day = String(start.getDate()).padStart(2,'0');
+        return `${year}-${month}-${day}`;
+    }
+
+    function isFirebaseConfigured(){
+        // simple check (si modificas este archivo con placeholders, ajusta)
+        return FIREBASE_CONFIG && FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.projectId &&
+               FIREBASE_CONFIG.apiKey !== "YOUR_API_KEY_HERE" && FIREBASE_CONFIG.projectId !== "your-project-id";
+    }
+
+    function updateConnectionStatus(status){
+        const statusEl = document.getElementById('connectionStatus');
+        statusEl.className = `connection-status ${status}`;
+        const statusMessages = {
+            connected: '✅ Conectado a Firebase',
+            disconnected: '💾 Modo Local',
+            connecting: '🔄 Conectando...'
         };
+        statusEl.textContent = statusMessages[status] || statusMessages.connecting;
+    }
 
-        const DAY_NAMES = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
-        
-        const CATEGORY_LABELS = {
-            'general': '💬 General',
-            'idea': '💡 Ideas',
-            'problema': '⚠️ Problemas',
-            'solucion': '✅ Soluciones',
-            'mejora': '📈 Mejoras'
-        };
+    // =================================== //
+    //         FIREBASE FUNCTIONS          //
+    // =================================== //
+    async function initFirebase(){
+        if (!isFirebaseConfigured()) {
+            console.warn('Firebase no configurado correctamente - usando modo local');
+            initLocalMode();
+            return;
+        }
 
-        // =================================== //
-        //           GLOBAL VARIABLES          //
-        // =================================== //
-        let currentMember = 'Duvan';
-        let calendarData = {};
-        let commentsData = [];
-        let currentFilter = 'all';
-        let db = null;
-        let isFirebaseEnabled = false;
+        try {
+            // inicializa compat (igual a como lo usa tu calendario)
+            firebase.initializeApp(FIREBASE_CONFIG);
+            db = firebase.firestore();
+            isFirebaseEnabled = true;
+            updateConnectionStatus('connected');
 
-        // =================================== //
-        //         UTILITY FUNCTIONS           //
-        // =================================== //
-        function getWeekDays(date) {
-            const week = [];
-            const startOfWeek = new Date(date);
-            const day = startOfWeek.getDay();
-            const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1);
-            startOfWeek.setDate(diff);
+            // carga calendario (que ya funciona en tu app)
+            await loadFromFirebase();
 
-            for (let i = 0; i < 7; i++) {
-                const currentDay = new Date(startOfWeek);
-                currentDay.setDate(startOfWeek.getDate() + i);
-                week.push(currentDay);
+            // configura listener de comentarios en tiempo real (subcolección)
+            setupCommentsRealtime();
+        } catch (error) {
+            console.error('Error inicializando Firebase:', error);
+            isFirebaseEnabled = false;
+            updateConnectionStatus('disconnected');
+            initLocalMode();
+        }
+    }
+
+    // ---------- CALENDARIO ----------
+    async function loadFromFirebase(){
+        try{
+            const weekKey = getWeekKey(new Date());
+            const doc = await db.collection('calendar').doc(weekKey).get();
+            calendarData = doc.exists ? (doc.data().days || {}) : {};
+            if (!doc.exists) {
+                initCalendarData();
+                await db.collection('calendar').doc(weekKey).set({
+                    days: calendarData,
+                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
             }
-            return week;
+            generateCalendar();
+            setupCalendarListener(weekKey);
+        }catch(err){
+            console.error('Error cargando calendario desde Firebase:',err);
+            initLocalMode();
         }
+    }
 
-        function getWeekKey(date) {
-            const week = getWeekDays(date);
-            const start = week[0];
-            const year = start.getFullYear();
-            const month = String(start.getMonth() + 1).padStart(2, '0');
-            const day = String(start.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
-        }
-
-        function isFirebaseConfigured() {
-            return FIREBASE_CONFIG.apiKey !== "YOUR_API_KEY_HERE" &&
-                   FIREBASE_CONFIG.projectId !== "your-project-id";
-        }
-
-        function updateConnectionStatus(status) {
-            const statusEl = document.getElementById('connectionStatus');
-            statusEl.className = `connection-status ${status}`;
-
-            const statusMessages = {
-                connected: '✅ Conectado a Firebase',
-                disconnected: '💾 Modo Local',
-                connecting: '🔄 Conectando...'
-            };
-
-            statusEl.textContent = statusMessages[status] || statusMessages.connecting;
-        }
-
-        // =================================== //
-        //         FIREBASE FUNCTIONS          //
-        // =================================== //
-        function initFirebase() {
-            if (!isFirebaseConfigured()) {
-                console.log('Firebase no configurado, usando modo local');
-                initLocalMode();
-                return;
-            }
-
-            try {
-                firebase.initializeApp(FIREBASE_CONFIG);
-                db = firebase.firestore();
-                isFirebaseEnabled = true;
-                updateConnectionStatus('connected');
-                loadFromFirebase();
-                loadCommentsFromFirebase();
-            } catch (error) {
-                console.error('Error inicializando Firebase:', error);
-                isFirebaseEnabled = false;
-                updateConnectionStatus('disconnected');
-                initLocalMode();
-            }
-        }
-
-        async function loadFromFirebase() {
-            try {
-                const weekKey = getWeekKey(new Date());
-                const doc = await db.collection('calendar').doc(weekKey).get();
-
-                calendarData = doc.exists ? (doc.data().days || {}) : {};
-                
-                if (!doc.exists) {
-                    initCalendarData();
-                }
-
-                generateCalendar();
-                setupCalendarListener(weekKey);
-
-            } catch (error) {
-                console.error('Error cargando desde Firebase:', error);
-                initLocalMode();
-            }
-        }
-
-        async function loadCommentsFromFirebase() {
-            try {
-                const weekKey = getWeekKey(new Date());
-                const doc = await db.collection('comments').doc(weekKey).get();
-
-                commentsData = doc.exists ? (doc.data().comments || []) : [];
-                
-                generateComments();
-                setupCommentsListener(weekKey);
-
-            } catch (error) {
-                console.error('Error cargando comentarios desde Firebase:', error);
-                loadCommentsFromLocal();
-            }
-        }
-
-        function setupCalendarListener(weekKey) {
-            db.collection('calendar').doc(weekKey).onSnapshot((doc) => {
-                if (doc.exists) {
+    function setupCalendarListener(weekKey){
+        try{
+            db.collection('calendar').doc(weekKey).onSnapshot((doc)=>{
+                if(doc.exists){
                     calendarData = doc.data().days || {};
                     generateCalendar();
                 }
             });
+        }catch(e){
+            console.error('setupCalendarListener error',e);
         }
+    }
 
-        function setupCommentsListener(weekKey) {
-            db.collection('comments').doc(weekKey).onSnapshot((doc) => {
-                if (doc.exists) {
-                    commentsData = doc.data().comments || [];
-                    generateComments();
-                }
-            });
-        }
-
-        async function saveCalendarData() {
-            const weekKey = getWeekKey(new Date());
-            
-            // Always save locally
-            localStorage.setItem(`calendar-${weekKey}`, JSON.stringify(calendarData));
-
-            // Save to Firebase if available
-            if (isFirebaseEnabled && db) {
-                try {
-                    await db.collection('calendar').doc(weekKey).set({
-                        days: calendarData,
-                        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                } catch (error) {
-                    console.error('Error guardando en Firebase:', error);
-                }
+    async function saveCalendarData(){
+        const weekKey = getWeekKey(new Date());
+        localStorage.setItem(`calendar-${weekKey}`, JSON.stringify(calendarData));
+        if (isFirebaseEnabled && db){
+            try{
+                await db.collection('calendar').doc(weekKey).set({
+                    days: calendarData,
+                    lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+                }, { merge: true });
+            }catch(e){
+                console.error('Error guardando calendario en Firebase:',e);
             }
         }
+    }
 
-        async function saveCommentsData() {
-            const weekKey = getWeekKey(new Date());
-            
-            // Always save locally
-            localStorage.setItem(`comments-${weekKey}`, JSON.stringify(commentsData));
-
-            // Save to Firebase if available
-            if (isFirebaseEnabled && db) {
-                try {
-                    await db.collection('comments').doc(weekKey).set({
-                        comments: commentsData,
-                        lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                } catch (error) {
-                    console.error('Error guardando comentarios en Firebase:', error);
-                }
-            }
-        }
-
-        // =================================== //
-        //          LOCAL MODE FUNCTIONS       //
-        // =================================== //
-        function initLocalMode() {
-            updateConnectionStatus('disconnected');
-            loadFromLocal();
+    // ---------- COMENTARIOS (subcolección por semana: comments/{weekKey}/items) ----------
+    function setupCommentsRealtime(){
+        if (!isFirebaseEnabled || !db) {
+            console.warn('No hay Firebase para setupCommentsRealtime');
             loadCommentsFromLocal();
+            return;
         }
 
-        function loadFromLocal() {
-            const weekKey = getWeekKey(new Date());
-            const localData = localStorage.getItem(`calendar-${weekKey}`);
+        const weekKey = getWeekKey(new Date());
 
-            if (localData) {
-                try {
-                    calendarData = JSON.parse(localData);
-                } catch (error) {
-                    console.error('Error parsing local calendar data:', error);
-                    initCalendarData();
-                }
-            } else {
-                initCalendarData();
-            }
-
-            generateCalendar();
+        // limpia listener anterior
+        if (commentsListener) {
+            try{ commentsListener(); } catch(e){ console.warn('error unsubscribing',e); }
+            commentsListener = null;
         }
 
-        function loadCommentsFromLocal() {
-            const weekKey = getWeekKey(new Date());
-            const localComments = localStorage.getItem(`comments-${weekKey}`);
-            
-            if (localComments) {
-                try {
-                    commentsData = JSON.parse(localComments);
-                } catch (error) {
-                    console.error('Error parsing local comments data:', error);
-                    commentsData = [];
+        const ref = db.collection('comments').doc(weekKey).collection('items');
+
+        commentsListener = ref.onSnapshot((snap) => {
+            const arr = [];
+            snap.forEach(docSnap => {
+                const data = docSnap.data() || {};
+                // normalizar timestamp numérico para ordenar en cliente
+                let tsNum = null;
+                if (data.ts && typeof data.ts.toDate === 'function') {
+                    tsNum = data.ts.toDate().getTime();
+                } else if (data.timestamp) {
+                    tsNum = data.timestamp;
+                } else {
+                    tsNum = Date.now();
                 }
-            } else {
-                commentsData = [];
-            }
-            
+
+                arr.push({
+                    id: docSnap.id,
+                    title: data.title || '',
+                    text: data.text || '',
+                    category: data.category || 'general',
+                    author: data.author || 'Anónimo',
+                    date: data.date || new Date(tsNum).toISOString(),
+                    timestamp: tsNum
+                });
+            });
+
+            // ordenar por timestamp descendente
+            arr.sort((a,b) => (b.timestamp || 0) - (a.timestamp || 0));
+            commentsData = arr;
+
+            // respaldo local (solo para lectura si se cae)
+            try { localStorage.setItem(`comments-${weekKey}`, JSON.stringify(commentsData)); } catch(e){}
+
             generateComments();
-        }
+            console.log('Comentarios sincronizados desde Firebase:', commentsData.length);
+        }, (error) => {
+            console.error('Error en listener de comentarios:', error);
+            loadCommentsFromLocal();
+        });
+    }
 
-        // =================================== //
-        //        DATA INITIALIZATION          //
-        // =================================== //
-        function initCalendarData() {
-            const today = new Date();
-            const currentWeek = getWeekDays(today);
-
-            currentWeek.forEach(date => {
-                const dateKey = date.toDateString();
-                if (!calendarData[dateKey]) {
-                    calendarData[dateKey] = {
-                        objective: '',
-                        tasks: [],
-                        assignedTo: currentMember
-                    };
-                }
+    async function saveCommentToFirebase(comment){
+        if (!isFirebaseEnabled || !db) throw new Error('Firebase no disponible');
+        const weekKey = getWeekKey(new Date());
+        try {
+            await db.collection('comments').doc(weekKey).collection('items').add({
+                ...comment,
+                // servidor para orden estable, y timestamp cliente para orden inmediato
+                ts: firebase.firestore.FieldValue.serverTimestamp(),
+                timestamp: comment.timestamp || Date.now()
             });
-
-            // Example data for first day
-            const exampleDate = currentWeek[0].toDateString();
-            if (!calendarData[exampleDate].objective) {
-                calendarData[exampleDate] = {
-                    objective: 'Completar análisis de mercado',
-                    tasks: [
-                        { text: 'Investigar competidores', completed: false },
-                        { text: 'Analizar tendencias', completed: true },
-                        { text: 'Preparar informe', completed: false }
-                    ],
-                    assignedTo: 'Ana García'
-                };
-            }
+            return true;
+        } catch (error) {
+            console.error('Error guardando comentario en Firebase:', error);
+            throw error;
         }
+    }
 
-        // =================================== //
-        //         CALENDAR FUNCTIONS          //
-        // =================================== //
-        function generateCalendar() {
-            const calendar = document.getElementById('calendar');
-            const today = new Date();
-            const weekDays = getWeekDays(today);
-
-            calendar.innerHTML = '';
-
-            // Generate day headers
-            DAY_NAMES.forEach(dayName => {
-                const header = document.createElement('div');
-                header.className = 'day-header';
-                header.textContent = dayName;
-                calendar.appendChild(header);
-            });
-
-            // Generate day cards
-            weekDays.forEach((date, index) => {
-                const dateKey = date.toDateString();
-                const dayData = calendarData[dateKey] || { 
-                    objective: '', 
-                    tasks: [], 
-                    assignedTo: currentMember 
-                };
-
-                const dayCard = createDayCard(date, dateKey, dayData, index);
-                calendar.appendChild(dayCard);
-            });
-
-            updateWeekProgress();
+    async function deleteCommentFromFirebase(commentId){
+        if (!isFirebaseEnabled || !db) throw new Error('Firebase no disponible');
+        const weekKey = getWeekKey(new Date());
+        try {
+            await db.collection('comments').doc(weekKey).collection('items').doc(commentId).delete();
+            return true;
+        } catch (error) {
+            console.error('Error eliminando comentario en Firebase:', error);
+            throw error;
         }
+    }
 
-        function createDayCard(date, dateKey, dayData, index) {
-            const today = new Date();
-            const isToday = date.toDateString() === today.toDateString();
-            const isWeekend = index >= 5;
-            
-            const completedTasks = dayData.tasks.filter(t => t.completed).length;
-            const totalTasks = dayData.tasks.length;
-            const progressPercent = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
+    // =================================== //
+    //          LOCAL MODE FUNCTIONS       //
+    // =================================== //
+    function initLocalMode(){
+        updateConnectionStatus('disconnected');
+        loadFromLocal();
+        loadCommentsFromLocal();
+    }
 
-            const dayCard = document.createElement('div');
-            dayCard.className = `day-card ${isWeekend ? 'weekend' : ''} ${isToday ? 'today' : ''}`;
+    function loadFromLocal(){
+        const weekKey = getWeekKey(new Date());
+        const localData = localStorage.getItem(`calendar-${weekKey}`);
+        if (localData){
+            try { calendarData = JSON.parse(localData); } catch(e){ console.error('parse calendar local',e); initCalendarData(); }
+        } else { initCalendarData(); }
+        generateCalendar();
+    }
 
-            dayCard.innerHTML = `
-                <div class="day-number">${date.getDate()}</div>
-                <input type="text" class="objective-input" placeholder="Objetivo del día..." 
-                       value="${dayData.objective}" data-date="${dateKey}">
-                
-                <div class="checklist" id="checklist-${dateKey}">
-                    ${dayData.tasks.map((task, i) => `
-                        <div class="checklist-item">
-                            <input type="checkbox" ${task.completed ? 'checked' : ''} 
-                                   data-date="${dateKey}" data-task-index="${i}">
-                            <input type="text" value="${task.text}" 
-                                   data-date="${dateKey}" data-task-index="${i}" data-task-text="true">
-                            <button class="delete-task-btn" data-date="${dateKey}" data-task-index="${i}">❌</button>
-                        </div>
-                    `).join('')}
-                </div>
-                
-                <div class="card-actions">
-                    <button class="add-task-btn" data-date="${dateKey}">+ Agregar Tarea</button>
-                    <button class="reset-day-btn" data-date="${dateKey}">🔄 Reiniciar</button>
-                </div>
-                
-                <div class="day-progress">
-                    <div class="day-progress-bar">
-                        <div class="day-progress-fill" style="width: ${progressPercent}%"></div>
-                    </div>
-                    <div class="day-progress-text">${completedTasks}/${totalTasks} completadas</div>
-                </div>
-            `;
+    function loadCommentsFromLocal(){
+        const weekKey = getWeekKey(new Date());
+        const localComments = localStorage.getItem(`comments-${weekKey}`);
+        if (localComments){
+            try { commentsData = JSON.parse(localComments); } catch(e){ console.error('parse comments local',e); commentsData = []; }
+        } else { commentsData = []; }
+        generateComments();
+    }
 
-            return dayCard;
-        }
+    // =================================== //
+    //        DATA INITIALIZATION          //
+    // =================================== //
+    function initCalendarData(){
+        const today = new Date();
+        const currentWeek = getWeekDays(today);
+        currentWeek.forEach(date=>{
+            const dateKey = date.toDateString();
+            if (!calendarData[dateKey]) calendarData[dateKey] = { objective:'', tasks:[], assignedTo: currentMember };
+        });
 
-        function updateWeekProgress() {
-            const weekDays = getWeekDays(new Date());
-            let totalTasks = 0;
-            let completedTasks = 0;
-
-            weekDays.forEach(date => {
-                const dateKey = date.toDateString();
-                const dayData = calendarData[dateKey];
-                if (dayData && dayData.tasks) {
-                    totalTasks += dayData.tasks.length;
-                    completedTasks += dayData.tasks.filter(t => t.completed).length;
-                }
-            });
-
-            const progressPercent = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
-            
-            document.getElementById('weekProgress').style.width = progressPercent + '%';
-            document.getElementById('completedTasks').textContent = `${completedTasks} tareas completadas`;
-            document.getElementById('totalTasks').textContent = `${totalTasks} tareas totales`;
-        }
-
-        // =================================== //
-        //         CALENDAR ACTIONS            //
-        // =================================== //
-        function updateObjective(dateKey, value) {
-            if (!calendarData[dateKey]) {
-                calendarData[dateKey] = { objective: '', tasks: [], assignedTo: currentMember };
-            }
-            calendarData[dateKey].objective = value;
-            calendarData[dateKey].assignedTo = currentMember;
-            saveCalendarData();
-        }
-
-        function addTask(dateKey) {
-            if (!calendarData[dateKey]) {
-                calendarData[dateKey] = { objective: '', tasks: [], assignedTo: currentMember };
-            }
-            calendarData[dateKey].tasks.push({ text: 'Nueva tarea', completed: false });
-            saveCalendarData();
-            generateCalendar();
-        }
-
-        function updateTask(dateKey, taskIndex, value) {
-            if (calendarData[dateKey] && calendarData[dateKey].tasks[taskIndex]) {
-                calendarData[dateKey].tasks[taskIndex].text = value;
-                saveCalendarData();
-            }
-        }
-
-        function toggleTask(dateKey, taskIndex) {
-            if (calendarData[dateKey] && calendarData[dateKey].tasks[taskIndex]) {
-                calendarData[dateKey].tasks[taskIndex].completed = !calendarData[dateKey].tasks[taskIndex].completed;
-                saveCalendarData();
-                generateCalendar();
-            }
-        }
-
-        function deleteTask(dateKey, taskIndex) {
-            if (!calendarData[dateKey] || !calendarData[dateKey].tasks[taskIndex]) return;
-            
-            if (confirm("¿Seguro que quieres eliminar esta tarea?")) {
-                calendarData[dateKey].tasks.splice(taskIndex, 1);
-                saveCalendarData();
-                generateCalendar();
-            }
-        }
-
-        function resetDay(dateKey) {
-            if (confirm("¿Seguro que quieres reiniciar este día? Se borrarán todas las tareas.")) {
-                calendarData[dateKey] = {
-                    objective: '',
-                    tasks: [],
-                    assignedTo: currentMember
-                };
-                saveCalendarData();
-                generateCalendar();
-            }
-        }
-
-        function selectMember(member) {
-            currentMember = member;
-            document.querySelectorAll('.team-member').forEach(el => el.classList.remove('active'));
-            document.querySelector(`[data-member="${member}"]`).classList.add('active');
-        }
-
-        // =================================== //
-        //        COMMENTS FUNCTIONS           //
-        // =================================== //
-        function toggleCommentsPanel() {
-            const section = document.getElementById('commentsSection');
-            const icon = document.getElementById('toggleIcon');
-            
-            section.classList.toggle('expanded');
-            
-            if (section.classList.contains('expanded')) {
-                icon.className = 'fas fa-chevron-down';
-            } else {
-                icon.className = 'fas fa-chevron-up';
-            }
-        }
-
-        function saveComment() {
-            const title = document.getElementById('commentTitle').value.trim();
-            const text = document.getElementById('commentText').value.trim();
-            const category = document.getElementById('commentCategory').value;
-
-            if (!title || !text) {
-                alert('Por favor completa el título y el comentario');
-                return;
-            }
-
-            const comment = {
-                id: Date.now().toString(),
-                title,
-                text,
-                category,
-                author: currentMember,
-                date: new Date().toISOString(),
-                timestamp: Date.now()
+        const exampleDate = currentWeek[0].toDateString();
+        if (!calendarData[exampleDate].objective) {
+            calendarData[exampleDate] = {
+                objective: 'Completar análisis de mercado',
+                tasks: [
+                    { text: 'Investigar competidores', completed: false },
+                    { text: 'Analizar tendencias', completed: true },
+                    { text: 'Preparar informe', completed: false }
+                ],
+                assignedTo: 'Ana García'
             };
-
-            commentsData.unshift(comment);
-            saveCommentsData();
-            generateComments();
-            clearCommentForm();
         }
+    }
 
-        function clearCommentForm() {
-            document.getElementById('commentTitle').value = '';
-            document.getElementById('commentText').value = '';
-            document.getElementById('commentCategory').value = 'general';
-        }
+    // =================================== //
+    //         CALENDAR FUNCTIONS          //
+    // =================================== //
+    function generateCalendar(){
+        const calendar = document.getElementById('calendar');
+        const today = new Date();
+        const weekDays = getWeekDays(today);
+        calendar.innerHTML = '';
 
-        function generateComments() {
-            const commentsList = document.getElementById('commentsList');
-            
-            const filteredComments = currentFilter === 'all' 
-                ? commentsData 
-                : commentsData.filter(comment => comment.category === currentFilter);
+        // headers (nombres días)
+        DAY_NAMES.forEach(dayName => {
+            const header = document.createElement('div');
+            header.className = 'day-header';
+            header.textContent = dayName;
+            calendar.appendChild(header);
+        });
 
-            if (filteredComments.length === 0) {
-                commentsList.innerHTML = `
-                    <div class="no-comments">
-                        <i class="fas fa-comments" style="font-size: 2rem; margin-bottom: 0.5rem; opacity: 0.5;"></i>
-                        <p>No hay comentarios aún. ¡Sé el primero en agregar un aporte!</p>
+        weekDays.forEach((date,index) => {
+            const dateKey = date.toDateString();
+            const dayData = calendarData[dateKey] || { objective:'', tasks:[], assignedTo: currentMember };
+            const dayCard = createDayCard(date,dateKey,dayData,index);
+            calendar.appendChild(dayCard);
+        });
+
+        updateWeekProgress();
+    }
+
+    function createDayCard(date,dateKey,dayData,index){
+        const today = new Date();
+        const isToday = date.toDateString() === today.toDateString();
+        const isWeekend = index >= 5;
+        const completedTasks = dayData.tasks.filter(t=>t.completed).length;
+        const totalTasks = dayData.tasks.length;
+        const progressPercent = totalTasks > 0 ? (completedTasks/totalTasks)*100 : 0;
+
+        const dayCard = document.createElement('div');
+        dayCard.className = `day-card ${isWeekend ? 'weekend' : ''} ${isToday ? 'today' : ''}`;
+        dayCard.innerHTML = `
+            <div class="day-number">${date.getDate()}</div>
+            <input type="text" class="objective-input" placeholder="Objetivo del día..."
+                   value="${escapeHtml(dayData.objective)}" data-date="${dateKey}">
+            <div class="checklist" id="checklist-${dateKey}">
+                ${dayData.tasks.map((task,i)=>`
+                    <div class="checklist-item">
+                        <input type="checkbox" ${task.completed ? 'checked' : ''} data-date="${dateKey}" data-task-index="${i}">
+                        <input type="text" value="${escapeHtml(task.text)}" data-date="${dateKey}" data-task-index="${i}" data-task-text="true">
+                        <button class="delete-task-btn" data-date="${dateKey}" data-task-index="${i}">❌</button>
                     </div>
-                `;
-                return;
+                `).join('')}
+            </div>
+            <div class="card-actions">
+                <button class="add-task-btn" data-date="${dateKey}">+ Agregar Tarea</button>
+                <button class="reset-day-btn" data-date="${dateKey}">🔄 Reiniciar</button>
+            </div>
+            <div class="day-progress">
+                <div class="day-progress-bar"><div class="day-progress-fill" style="width:${progressPercent}%"></div></div>
+                <div class="day-progress-text">${completedTasks}/${totalTasks} completadas</div>
+            </div>
+        `;
+        return dayCard;
+    }
+
+    function updateWeekProgress(){
+        const weekDays = getWeekDays(new Date());
+        let totalTasks=0, completedTasks=0;
+        weekDays.forEach(date=>{
+            const dateKey = date.toDateString();
+            const dayData = calendarData[dateKey];
+            if (dayData && dayData.tasks){
+                totalTasks += dayData.tasks.length;
+                completedTasks += dayData.tasks.filter(t=>t.completed).length;
             }
+        });
+        const progressPercent = totalTasks > 0 ? (completedTasks/totalTasks)*100 : 0;
+        document.getElementById('weekProgress').style.width = progressPercent + '%';
+        document.getElementById('completedTasks').textContent = `${completedTasks} tareas completadas`;
+        document.getElementById('totalTasks').textContent = `${totalTasks} tareas totales`;
+    }
 
-            commentsList.innerHTML = filteredComments.map(createCommentHTML).join('');
+    // =================================== //
+    //         CALENDAR ACTIONS            //
+    // =================================== //
+    function updateObjective(dateKey,value){
+        if (!calendarData[dateKey]) calendarData[dateKey] = { objective:'', tasks:[], assignedTo:currentMember };
+        calendarData[dateKey].objective = value;
+        calendarData[dateKey].assignedTo = currentMember;
+        saveCalendarData();
+    }
+
+    function addTask(dateKey){
+        if (!calendarData[dateKey]) calendarData[dateKey] = { objective:'', tasks:[], assignedTo:currentMember };
+        calendarData[dateKey].tasks.push({ text:'Nueva tarea', completed:false });
+        saveCalendarData();
+        generateCalendar();
+    }
+
+    function updateTask(dateKey,taskIndex,value){
+        if (calendarData[dateKey] && calendarData[dateKey].tasks[taskIndex]){
+            calendarData[dateKey].tasks[taskIndex].text = value;
+            saveCalendarData();
         }
+    }
 
-        function createCommentHTML(comment) {
-            const date = new Date(comment.date);
-            const formattedDate = date.toLocaleDateString('es-ES', {
-                day: '2-digit',
-                month: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-
-            return `
-                <div class="comment-item ${comment.category}">
-                    <div class="comment-header">
-                        <h4 class="comment-title">${comment.title}</h4>
-                        <div class="comment-meta">
-                            <span class="comment-category">${CATEGORY_LABELS[comment.category]}</span>
-                            <span class="comment-author">Por: ${comment.author}</span>
-                            <span class="comment-date">${formattedDate}</span>
-                        </div>
-                    </div>
-                    <div class="comment-text">${comment.text}</div>
-                    <div class="comment-actions">
-                        <button class="delete-comment-btn" data-comment-id="${comment.id}">
-                            <i class="fas fa-trash"></i> Eliminar
-                        </button>
-                    </div>
-                </div>
-            `;
+    function toggleTask(dateKey,taskIndex){
+        if (calendarData[dateKey] && calendarData[dateKey].tasks[taskIndex]){
+            calendarData[dateKey].tasks[taskIndex].completed = !calendarData[dateKey].tasks[taskIndex].completed;
+            saveCalendarData();
+            generateCalendar();
         }
+    }
 
-        function filterComments(category) {
-            currentFilter = category;
-            
-            // Update active filter button
-            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
-            document.querySelector(`[data-filter="${category}"]`).classList.add('active');
-            
-            generateComments();
+    function deleteTask(dateKey,taskIndex){
+        if (!calendarData[dateKey] || !calendarData[dateKey].tasks[taskIndex]) return;
+        if (confirm("¿Seguro que quieres eliminar esta tarea?")){
+            calendarData[dateKey].tasks.splice(taskIndex,1);
+            saveCalendarData();
+            generateCalendar();
         }
+    }
 
-        function deleteComment(commentId) {
-            if (confirm('¿Seguro que quieres eliminar este comentario?')) {
-                commentsData = commentsData.filter(comment => comment.id !== commentId);
-                saveCommentsData();
+    function resetDay(dateKey){
+        if (confirm("¿Seguro que quieres reiniciar este día? Se borrarán todas las tareas.")){
+            calendarData[dateKey] = { objective:'', tasks:[], assignedTo: currentMember };
+            saveCalendarData();
+            generateCalendar();
+        }
+    }
+
+    function selectMember(member){
+        currentMember = member;
+        document.querySelectorAll('.team-member').forEach(el => el.classList.remove('active'));
+        const el = document.querySelector(`[data-member="${member}"]`);
+        if (el) el.classList.add('active');
+    }
+
+    // =================================== //
+    //        COMMENTS FUNCTIONS           //
+    // =================================== //
+    function toggleCommentsPanel(){
+        const section = document.getElementById('commentsSection');
+        const icon = document.getElementById('toggleIcon');
+        section.classList.toggle('expanded');
+        if (section.classList.contains('expanded')) icon.className = 'fas fa-chevron-down';
+        else icon.className = 'fas fa-chevron-up';
+    }
+
+    async function saveComment(){
+        const title = document.getElementById('commentTitle').value.trim();
+        const text = document.getElementById('commentText').value.trim();
+        const category = document.getElementById('commentCategory').value || 'general';
+        if (!title || !text){ alert('Por favor completa el título y el comentario'); return; }
+
+        const comment = {
+            title, text, category,
+            author: currentMember,
+            date: new Date().toISOString(),
+            timestamp: Date.now()
+        };
+
+        if (isFirebaseEnabled && db){
+            try {
+                await saveCommentToFirebase(comment);
+                // No actualizamos localmente aquí: el snapshot de Firestore actualizará la UI.
+            } catch (error) {
+                // fallback: guardar local temporario
+                console.warn('Fallback local: guardando comentario en backup local', error);
+                const weekKey = getWeekKey(new Date());
+                const temp = { id: 'local-' + Date.now(), ...comment };
+                commentsData.unshift(temp);
+                try { localStorage.setItem(`comments-${weekKey}`, JSON.stringify(commentsData)); } catch(e){}
                 generateComments();
             }
+        } else {
+            // modo local
+            const weekKey = getWeekKey(new Date());
+            const temp = { id: 'local-' + Date.now(), ...comment };
+            commentsData.unshift(temp);
+            try { localStorage.setItem(`comments-${weekKey}`, JSON.stringify(commentsData)); } catch(e){}
+            generateComments();
         }
 
-        // =================================== //
-        //          EVENT LISTENERS            //
-        // =================================== //
-        function setupEventListeners() {
-            // Team member selection
-            document.addEventListener('click', (e) => {
-                if (e.target.closest('.team-member')) {
-                    const member = e.target.closest('.team-member').dataset.member;
-                    selectMember(member);
-                }
-            });
+        clearCommentForm();
+    }
 
-            // Calendar interactions
-            document.addEventListener('change', (e) => {
-                const target = e.target;
-                const dateKey = target.dataset.date;
-                const taskIndex = parseInt(target.dataset.taskIndex);
+    function clearCommentForm(){
+        document.getElementById('commentTitle').value = '';
+        document.getElementById('commentText').value = '';
+        document.getElementById('commentCategory').value = 'general';
+    }
 
-                if (target.classList.contains('objective-input')) {
-                    updateObjective(dateKey, target.value);
-                } else if (target.type === 'checkbox' && target.dataset.taskIndex !== undefined) {
-                    toggleTask(dateKey, taskIndex);
-                } else if (target.dataset.taskText) {
-                    updateTask(dateKey, taskIndex, target.value);
-                }
-            });
+    function generateComments(){
+        const commentsList = document.getElementById('commentsList');
+        const filtered = currentFilter === 'all' ? commentsData : commentsData.filter(c => c.category === currentFilter);
 
-            document.addEventListener('click', (e) => {
-                const target = e.target;
-                const dateKey = target.dataset.date;
-                const taskIndex = parseInt(target.dataset.taskIndex);
+        // ordenar por timestamp descendente
+        filtered.sort((a,b) => (b.timestamp || 0) - (a.timestamp || 0));
 
-                if (target.classList.contains('add-task-btn')) {
-                    addTask(dateKey);
-                } else if (target.classList.contains('reset-day-btn')) {
-                    resetDay(dateKey);
-                } else if (target.classList.contains('delete-task-btn')) {
-                    deleteTask(dateKey, taskIndex);
-                }
-            });
+        if (filtered.length === 0){
+            commentsList.innerHTML = `
+                <div class="no-comments" style="text-align:center;color:#6b7280;padding:1rem">
+                    <i class="fas fa-comments" style="font-size:2rem;margin-bottom:.5rem;opacity:.6"></i>
+                    <p>No hay comentarios aún. ¡Sé el primero en agregar un aporte!</p>
+                </div>
+            `;
+            return;
+        }
 
-            // Comments interactions
-            document.getElementById('toggleCommentsBtn').addEventListener('click', toggleCommentsPanel);
-            document.getElementById('saveCommentBtn').addEventListener('click', saveComment);
+        commentsList.innerHTML = filtered.map(createCommentHTML).join('');
+    }
 
-            document.addEventListener('click', (e) => {
-                if (e.target.classList.contains('filter-btn')) {
-                    const filter = e.target.dataset.filter;
-                    filterComments(filter);
-                } else if (e.target.closest('.delete-comment-btn')) {
-                    const commentId = e.target.closest('.delete-comment-btn').dataset.commentId;
-                    deleteComment(commentId);
-                }
-            });
+    function createCommentHTML(comment){
+        const date = new Date(comment.timestamp || comment.date || Date.now());
+        const formatted = date.toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'});
+        return `
+            <div class="comment-item ${escapeHtml(comment.category)}">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start">
+                    <div style="flex:1;margin-right:.6rem">
+                        <h4 class="comment-title">${escapeHtml(comment.title)}</h4>
+                        <div class="comment-meta">
+                            <span class="comment-category">${CATEGORY_LABELS[comment.category] || '💬 General'}</span>
+                            <span class="comment-author">Por: ${escapeHtml(comment.author || 'Anónimo')}</span>
+                            <span class="comment-date">${formatted}</span>
+                        </div>
+                        <div style="margin-top:.4rem">${escapeHtml(comment.text).replace(/\n/g,'<br>')}</div>
+                    </div>
+                    <div>
+                        <button class="delete-comment-btn" data-comment-id="${comment.id}" title="Eliminar comentario">🗑️</button>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
 
-            // Save before page unload
-            window.addEventListener('beforeunload', () => {
+    async function deleteComment(commentId){
+        if (!commentId) return;
+        if (!confirm('¿Seguro que quieres eliminar este comentario?')) return;
+
+        if (isFirebaseEnabled && db && !commentId.startsWith('local-')){
+            try {
+                await deleteCommentFromFirebase(commentId);
+            } catch (error) {
+                alert('No se pudo eliminar el comentario en la nube.');
+            }
+        } else {
+            // local fallback
+            const initialLen = commentsData.length;
+            commentsData = commentsData.filter(c => c.id !== commentId);
+            if (commentsData.length < initialLen){
                 const weekKey = getWeekKey(new Date());
-                localStorage.setItem(`calendar-${weekKey}`, JSON.stringify(calendarData));
-                localStorage.setItem(`comments-${weekKey}`, JSON.stringify(commentsData));
-            });
+                try { localStorage.setItem(`comments-${weekKey}`, JSON.stringify(commentsData)); } catch(e){}
+                generateComments();
+            } else {
+                console.warn('No se encontró el comentario local para eliminar:', commentId);
+            }
         }
+    }
 
-        // =================================== //
-        //           INITIALIZATION            //
-        // =================================== //
-        function initApplication() {
-            updateConnectionStatus('connecting');
-            setupEventListeners();
-            
-            setTimeout(() => {
-                initFirebase();
-            }, 1000);
-        }
+    // Helpers
+    function escapeHtml(str=''){
+        return String(str)
+            .replace(/&/g,'&amp;')
+            .replace(/</g,'&lt;')
+            .replace(/>/g,'&gt;')
+            .replace(/"/g,'&quot;')
+            .replace(/'/g,'&#039;');
+    }
 
-        // Start application when DOM is ready
-        document.addEventListener('DOMContentLoaded', initApplication);
+    // =================================== //
+    //          EVENT LISTENERS            //
+    // =================================== //
+    function setupEventListeners(){
+        // Team member selection
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.team-member')) {
+                const member = e.target.closest('.team-member').dataset.member;
+                selectMember(member);
+            }
+        });
+
+        // Calendar interactions
+        document.addEventListener('change', (e) => {
+            const target = e.target;
+            const dateKey = target.dataset.date;
+            const taskIndex = parseInt(target.dataset.taskIndex);
+            if (target.classList.contains('objective-input')) {
+                updateObjective(dateKey, target.value);
+            } else if (target.type === 'checkbox' && target.dataset.taskIndex !== undefined) {
+                toggleTask(dateKey, taskIndex);
+            } else if (target.dataset.taskText) {
+                updateTask(dateKey, taskIndex, target.value);
+            }
+        });
+
+        document.addEventListener('click', (e) => {
+            const target = e.target;
+            const dateKey = target.dataset.date;
+            const taskIndex = parseInt(target.dataset.taskIndex);
+            if (target.classList.contains('add-task-btn')) addTask(dateKey);
+            else if (target.classList.contains('reset-day-btn')) resetDay(dateKey);
+            else if (target.classList.contains('delete-task-btn')) deleteTask(dateKey, taskIndex);
+        });
+
+        // Comments interactions
+        document.getElementById('toggleCommentsBtn').addEventListener('click', toggleCommentsPanel);
+        document.getElementById('saveCommentBtn').addEventListener('click', saveComment);
+
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('filter-btn')) {
+                const filter = e.target.dataset.filter;
+                currentFilter = filter;
+                document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+                e.target.classList.add('active');
+                generateComments();
+            } else if (e.target.closest('.delete-comment-btn')) {
+                const commentId = e.target.closest('.delete-comment-btn').dataset.commentId;
+                deleteComment(commentId);
+            }
+        });
+
+        // Save calendar local on unload
+        window.addEventListener('beforeunload', () => {
+            const weekKey = getWeekKey(new Date());
+            localStorage.setItem(`calendar-${weekKey}`, JSON.stringify(calendarData));
+            // comentarios se guardan desde snapshot y backup local
+        });
+
+        // Enter key shortcuts
+        document.getElementById('commentTitle').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') document.getElementById('commentText').focus();
+        });
+        document.getElementById('commentText').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && e.ctrlKey) saveComment();
+        });
+    }
+
+    // =================================== //
+    //           INITIALIZATION            //
+    // =================================== //
+    function initApplication(){
+        updateConnectionStatus('connecting');
+        setupEventListeners();
+        // Inicializamos Firebase poco después para que UI cargue rápido
+        setTimeout(() => { initFirebase(); }, 600);
+    }
+
+    // Debug
+    window.debugComments = function(){ console.log({commentsData, isFirebaseEnabled, currentFilter}); };
+
+    // Start
+    document.addEventListener('DOMContentLoaded', initApplication);
     </script>
 </body>
 
