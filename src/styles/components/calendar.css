@@ -1,0 +1,254 @@
+/* =================================== */
+/* CALENDAR                 */
+/* =================================== */
+/* En src/styles/components/calendar.css */
+
+/* Cambia el número 7 por un 5 */
+/* En src/styles/components/calendar.css */
+
+.calendar-grid {
+    display: grid;
+    /* 1. Creamos una grilla con 6 columnas iguales */
+    grid-template-columns: repeat(6, 1fr);
+    gap: 1rem;
+    margin: 0;
+    padding: 2rem;
+    
+}
+
+/* 2. Le decimos a los 2 primeros días (Lunes, Martes) que cada uno ocupe 3 columnas */
+.calendar-grid .day-card:nth-child(-n + 2) {
+    grid-column: span 3;
+}
+
+/* 3. Le decimos a los 3 días restantes que cada uno ocupe 2 columnas */
+.calendar-grid .day-card:nth-child(n + 3) {
+    grid-column: span 2;
+}
+
+.day-header {
+    text-align: center;
+    font-weight: 600;
+    color: var(--primary-color);
+    padding: 1rem;
+    font-size: 1.1rem;
+}
+
+.day-card {
+    background: var(--card-bg);
+    border-radius: 15px;
+    padding: 1.5rem;
+    min-height: 350px;
+    border: 1px solid var(--card-border);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    backdrop-filter: blur(10px);
+}
+
+.day-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-heavy);
+}
+
+.day-card.today {
+    border: 2px solid var(--primary-color);
+    box-shadow: var(--shadow-light);
+}
+
+.day-card.weekend {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.day-number {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+}
+
+.objective-input {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--card-border);
+    border-radius: 8px;
+    padding: 0.5rem;
+    color: white;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+    transition: border-color 0.2s ease;
+}
+
+.objective-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 10px rgba(0, 212, 255, 0.2);
+}
+
+.objective-input::placeholder {
+    color: var(--text-secondary);
+}
+
+/* =================================== */
+/* CHECKLIST                */
+/* =================================== */
+/* Reemplaza la regla .checklist que tengas por esta */
+
+.checklist {
+    flex: 1;
+    margin: 0;          /* <-- Asegura que no haya márgenes exteriores */
+    padding: 0;         /* <-- Asegura que no haya relleno interior */
+    list-style: none;   /* <-- Por si acaso, quita cualquier viñeta de lista */
+    margin-bottom: 1rem;/* Mantenemos el espacio inferior que ya teníamos */
+}
+
+.checklist-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.8rem;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 0.5rem;
+    border-radius: 6px;
+    border-left: 3px solid;
+}
+
+/* --- Estilos de Miembros --- */
+.checklist-item.casti { border-left-color: #3498db; }    /* Azul */
+.checklist-item.pipe { border-left-color: #2ecc71; }     /* Verde */
+.checklist-item.paz { border-left-color: #f1c40f; }      /* Amarillo */
+.checklist-item.pau { border-left-color: #e74c3c; }      /* Rojo */
+.checklist-item.joyce { border-left-color: #9b59b6; }    /* Morado */
+
+
+.checklist-item input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--primary-color);
+}
+
+.checklist-item input[type="text"] {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--card-border);
+    border-radius: 4px;
+    padding: 0.3rem 0.5rem;
+    color: white;
+    font-size: 0.8rem;
+    transition: border-color 0.2s ease;
+}
+
+.checklist-item input[type="text"]:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+.task-assignee {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--card-border);
+    border-radius: 4px;
+    padding: 0.3rem 0.5rem;
+    color: black;
+    font-size: 0.75rem;
+    min-width: 70px;
+    text-align: center;
+}
+
+.task-assignee:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+.assignee-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 0.3rem;
+}
+
+/* --- Indicadores de Miembros --- */
+.assignee-indicator.casti { background-color: #3498db; }
+.assignee-indicator.pipe { background-color: #2ecc71; }
+.assignee-indicator.paz { background-color: #f1c40f; }
+.assignee-indicator.pau { background-color: #e74c3c; }
+.assignee-indicator.joyce { background-color: #9b59b6; }
+
+.delete-task-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.8rem;
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+    padding: 0.2rem;
+}
+
+.delete-task-btn:hover {
+    opacity: 1;
+}
+
+/* =================================== */
+/* ACTION BUTTONS            */
+/* =================================== */
+.card-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.add-task-btn,
+.reset-day-btn {
+    background: rgba(0, 212, 255, 0.2);
+    border: 1px solid var(--primary-color);
+    color: var(--primary-color);
+    padding: 0.4rem 0.8rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all 0.2s ease;
+    flex: 1;
+}
+
+.add-task-btn:hover,
+.reset-day-btn:hover {
+    background: rgba(0, 212, 255, 0.3);
+    transform: translateY(-1px);
+}
+
+.reset-day-btn {
+    background: rgba(225, 112, 85, 0.2);
+    border-color: var(--danger-color);
+    color: var(--danger-color);
+}
+
+.reset-day-btn:hover {
+    background: rgba(225, 112, 85, 0.3);
+}
+
+/* =================================== */
+/* DAY PROGRESS                */
+/* =================================== */
+.day-progress {
+    margin-top: auto;
+}
+
+.day-progress-bar {
+    background: var(--card-border);
+    height: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+}
+
+.day-progress-fill {
+    background: linear-gradient(90deg, var(--primary-color), var(--primary-dark));
+    height: 100%;
+    transition: width 0.3s ease;
+}
+
+.day-progress-text {
+    font-size: 0.7rem;
+    text-align: center;
+    opacity: 0.8;
+}

@@ -1,0 +1,96 @@
+/* =================================== */
+/* RESET & BASE              */
+/* =================================== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --primary-color: #00d4ff;
+    --primary-dark: #0099cc;
+    --bg-gradient: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+    --card-bg: rgba(255, 255, 255, 0.08);
+    --card-border: rgba(255, 255, 255, 0.1);
+    --glass-bg: rgba(255, 255, 255, 0.05);
+    --text-primary: #ffffff;
+    --text-secondary: #b2bec3;
+    --success-color: #00b894;
+    --warning-color: #fdcb6e;
+    --danger-color: #e17055;
+    --info-color: #74b9ff;
+    --shadow-light: 0 4px 15px rgba(0, 212, 255, 0.1);
+    --shadow-heavy: 0 10px 30px rgba(0, 212, 255, 0.2);
+}
+
+/* --- REGLAS GLOBALES PARA EL LAYOUT --- */
+html, body, #root, .app-wrapper {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: var(--bg-gradient);
+    color: var(--text-primary);
+    min-height: 100vh;
+    padding-bottom: 100px;
+    overflow-x: hidden; /* Garantiza que no haya scroll horizontal */
+}
+
+/* =================================== */
+/* MAIN CONTAINER            */
+/* =================================== */
+.container {
+    width: 95%; /* Ocupa el 95% del ancho para dejar márgenes */
+    max-width: 1400px; /* Ancho máximo en pantallas grandes */
+    margin: 0 auto; /* Centra el contenedor */
+    padding: 2rem;
+}
+
+/* =================================== */
+/* RESPONSIVE DESIGN           */
+/* =================================== */
+@media (max-width: 1024px) {
+    .header-section {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .container {
+        padding: 1.5rem;
+    }
+}
+
+@media (max-width: 768px) {
+    body {
+        padding-bottom: 80px;
+    }
+
+    .container {
+        width: 100%; /* En móviles, ocupa todo el ancho */
+        padding: 1rem;
+    }
+
+    .calendar-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .comments-section {
+        transform: translateY(calc(100% - 60px));
+        max-height: 80vh;
+        border-radius: 15px 15px 0 0;
+    }
+    
+    .checklist-item {
+        flex-wrap: wrap;
+        gap: 0.3rem;
+    }
+    
+    .task-assignee {
+        min-width: 60px;
+        font-size: 0.7rem;
+    }
+}
