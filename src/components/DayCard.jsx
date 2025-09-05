@@ -9,7 +9,7 @@ function DayCard({ dayData, onToggleTask, onUpdateTaskText, onAddTask, onDeleteT
 
   return (
     <div className="day-card">
-      <div className="day-number">{dayData.number}</div>
+      <div className="day-number">{dayData.name}</div>
       <input 
         type="text" 
         className="objective-input" 
