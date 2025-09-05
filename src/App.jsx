@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { db, auth } from './firebase/config.js';
+import { db, auth, signOutUser } from './firebase/config.js';
 import { onAuthStateChanged } from 'firebase/auth';
 import { collection, doc, onSnapshot, updateDoc, addDoc, deleteDoc, setDoc } from 'firebase/firestore';
 
@@ -11,19 +11,24 @@ import Login from './components/Login.jsx';
 
 // --- Componentes Auxiliares ---
 
-// Componente para mostrar mientras se carga
 const LoadingSpinner = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', color: 'white' }}>
     <h2>Cargando...</h2>
   </div>
 );
 
-// Componente para mostrar cuando el acceso es denegado
-const AccessDenied = () => (
-    <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100vh', textAlign: 'center', color: 'white' }}>
-      <h1>Acceso Denegado</h1>
-      <p>No tienes permiso para ver este contenido. Por favor, contacta al administrador.</p>
-    </div>
+const AccessDenied = ({ onLogout }) => (
+  <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100vh', textAlign: 'center', color: 'white' }}>
+    <h1>Acceso Denegado</h1>
+    <p>Este correo no tiene permiso para ver este contenido.</p>
+    <button 
+      className="calendar-toggle-btn" 
+      style={{marginTop: '2rem', background: 'rgba(255, 255, 255, 0.1)', borderColor: 'white', color: 'white'}} 
+      onClick={onLogout}
+    >
+      Cambiar de cuenta
+    </button>
+  </div>
 );
 
 // --- Función para Generar la Semana ---
@@ -44,12 +49,11 @@ const generateWeekData = () => {
   return week;
 };
 
-
 // --- Componente Principal de la Aplicación ---
 
 function App() {
   const [user, setUser] = useState(null);
-  const [weekData, setWeekData] = useState(generateWeekData); // Inicia con la estructura de la semana
+  const [weekData, setWeekData] = useState(generateWeekData);
   const [objectives, setObjectives] = useState({});
   const [currentMember, setCurrentMember] = useState('casti');
   
@@ -70,7 +74,7 @@ function App() {
 
   // Efecto para escuchar las TAREAS de Firestore
   useEffect(() => {
-    if (!user) return; // No hacer nada si no hay usuario
+    if (!user) return;
     const unsubscribe = onSnapshot(collection(db, weekId), 
       (snapshot) => {
         const tasksByDay = {};
@@ -80,15 +84,15 @@ function App() {
           tasksByDay[task.dayId].push(task);
         });
         setWeekData(prev => prev.map(day => ({ ...day, tasks: tasksByDay[day.id] || [] })));
-        setError(null); // Si tenemos éxito, nos aseguramos de que no haya errores
+        setError(null);
       },
-      (err) => { // Función de error
+      (err) => {
         console.error("Error al obtener tareas:", err);
         setError(err);
       }
     );
     return () => unsubscribe();
-  }, [user]); // Se activa cuando el usuario cambia
+  }, [user]);
 
   // Efecto para escuchar los OBJETIVOS de Firestore
   useEffect(() => {
@@ -98,6 +102,10 @@ function App() {
       if (doc.exists()) {
         setObjectives(doc.data());
       }
+    },
+    (err) => {
+        console.error("Error al obtener objetivos:", err);
+        setError(err);
     });
     return () => unsubscribe();
   }, [user]);
@@ -120,7 +128,7 @@ function App() {
     await setDoc(doc(db, "objetivos", objectivesId), { [dayId]: newText }, { merge: true });
   };
   const handleResetDay = async (dayId) => {
-    if (window.confirm("¿Seguro?")) {
+    if (window.confirm("¿Seguro que quieres borrar todas las tareas de este día?")) {
       const dayTasks = weekData.find(d => d.id === dayId)?.tasks || [];
       for (const task of dayTasks) {
         await deleteDoc(doc(db, weekId, task.id));
@@ -136,7 +144,7 @@ function App() {
     return <Login />;
   }
   if (error) {
-    return <AccessDenied />;
+    return <AccessDenied onLogout={signOutUser} />;
   }
 
   return (
@@ -167,3 +175,4 @@ function App() {
 }
 
 export default App;
+
