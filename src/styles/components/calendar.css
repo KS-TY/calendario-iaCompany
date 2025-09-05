@@ -145,11 +145,11 @@
 }
 
 .task-assignee {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgb(26, 31, 70);
     border: 1px solid var(--card-border);
     border-radius: 4px;
     padding: 0.3rem 0.5rem;
-    color: black;
+    color: white;
     font-size: 0.75rem;
     min-width: 70px;
     text-align: center;
@@ -251,4 +251,37 @@
     font-size: 0.7rem;
     text-align: center;
     opacity: 0.8;
+}
+
+/* --- ESTILOS RESPONSIVE PARA EL CALENDARIO --- */
+
+/* Vista para Tablets (hasta 1024px) */
+@media (max-width: 1024px) {
+    .calendar-grid {
+        /* Pasamos de 6 a 4 columnas */
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+    /* Lunes y Martes ocupan 2 columnas cada uno (media fila) */
+    .calendar-grid .day-card:nth-child(-n + 2) {
+        grid-column: span 2;
+    }
+
+    /* Miércoles, Jueves y Viernes también ocupan 2 columnas cada uno */
+    .calendar-grid .day-card:nth-child(n + 3) {
+        grid-column: span 2;
+    }
+}
+
+/* Vista para Teléfonos (hasta 768px) */
+@media (max-width: 768px) {
+    .calendar-grid {
+        /* Una sola columna para apilar todas las tarjetas */
+        grid-template-columns: 1fr;
+    }
+
+    /* Reseteamos la expansión de todas las tarjetas para que ocupen una sola columna */
+    .calendar-grid .day-card {
+        grid-column: span 1;
+    }
 }

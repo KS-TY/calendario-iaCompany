@@ -1,10 +1,10 @@
 import React from 'react';
-import { signOutUser } from '../firebase/config.js'; // Importamos la función de cerrar sesión
+import { signOutUser } from '../firebase/config.js';
 
-// El Navbar ahora recibe al "usuario" como un prop
 function Navbar({ user }) {
   return (
     <nav className="navbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      {/* 1. Envolvemos el logo y título en un div */}
       <div className="navbar-brand">
         <h1>
           <img 
@@ -12,11 +12,10 @@ function Navbar({ user }) {
             alt="Logo Grupo Bolívar" 
             style={{ width: '150px', height: '80px', verticalAlign: 'middle', marginRight: '8px' }} 
           />
-          Reto Grupo Bolívar
+          Reto IA company
         </h1>
       </div>
       
-      {/* Mostramos la info del usuario y el botón de salir si el usuario existe */}
       {user && (
         <div className="user-info" style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           <img src={user.photoURL} alt={user.displayName} style={{ width: '40px', height: '40px', borderRadius: '50%' }} />

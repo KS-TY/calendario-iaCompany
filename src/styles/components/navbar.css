@@ -17,3 +17,21 @@
     font-weight: 700;
     text-shadow: 0 0 20px rgba(57, 255, 20, 0.6);
 }
+
+/* --- ESTILOS RESPONSIVE PARA NAVBAR --- */
+
+@media (max-width: 768px) {
+    .navbar {
+        position: relative; /* Cambia de 'sticky' a 'relative' en móviles */
+        flex-wrap: wrap;   /* Permite que los elementos se pongan uno debajo del otro */
+        gap: 1rem;         /* Añade un espacio entre los elementos cuando se envuelven */
+        justify-content: center;
+        padding: 1rem;
+    }
+
+    .navbar-brand {
+        /* Asegura que la marca ocupe todo el ancho para centrarse */
+        width: 100%;
+        text-align: center;
+    }
+}

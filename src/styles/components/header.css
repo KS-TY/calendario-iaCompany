@@ -13,7 +13,17 @@
     backdrop-filter: blur(10px);
 }
 
-.connection-status.connected {
+.connection-status {
+    position: fixed;
+    top: 110px;  /* <-- AUMENTA ESTE VALOR para bajarlo */
+    right: 20px;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    z-index: 1100;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+
     background: rgba(0, 255, 0, 0.2);
     border: 1px solid #00ff00;
     color: #00ff00;
@@ -196,4 +206,12 @@
 .team-member.active {
     background: rgba(0, 212, 255, 0.2);
     border: 1px solid var(--primary-color);
+}
+
+/* --- ESTILOS RESPONSIVE PARA LA CABECERA --- */
+@media (max-width: 1024px) {
+    .header-section {
+        grid-template-columns: 1fr; /* En pantallas pequeñas, apila los elementos en una sola columna */
+        gap: 1rem;
+    }
 }
