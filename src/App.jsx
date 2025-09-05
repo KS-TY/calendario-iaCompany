@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { db } from './firebase/config.js';
 import { collection, doc, onSnapshot, updateDoc, addDoc, deleteDoc } from 'firebase/firestore';
 
-import Navbar from 'components/Navbar.jsx';
+import Navbar from './components/Navbar.jsx';
 import ProjectHeader from './components/ProjectHeader.jsx';
 import CalendarGrid from './components/CalendarGrid.jsx';
 import CommentsSection from './components/CommentsSection.jsx'; 
